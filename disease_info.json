@@ -1,0 +1,121 @@
+{
+  "Allergy": {
+    "description": "Allergies occur when the immune system reacts to harmless substances like dust, pollen, or foods, causing sneezing, itching, or rashes.",
+    "medicines": ["Cetirizine", "Levocetirizine", "Antihistamines"],
+    "specialist": "Dermatologist",
+    "triage": "GENERAL_ADVICE",
+    "actions": ["Avoid allergens", "Use antihistamines", "Consult doctor if breathing difficulty"],
+    "image": "/static/images/allergy.png",
+    "related": ["Flu", "Common Cold", "Asthma"]
+  },
+
+  "Asthma": {
+    "description": "Asthma is a chronic respiratory condition causing airway inflammation, wheezing and difficulty breathing.",
+    "medicines": ["Salbutamol Inhaler", "Budesonide Inhaler"],
+    "specialist": "Pulmonologist",
+    "triage": "MODERATE",
+    "actions": ["Use inhaler", "Avoid triggers", "Seek immediate help if severe"],
+    "image": "/static/images/asthma.png",
+    "related": ["Bronchitis", "Pneumonia", "Allergy"]
+  },
+
+  "Bronchitis": {
+    "description": "Bronchitis is inflammation of the bronchial tubes, causing cough, mucus, chest discomfort and breathing difficulty.",
+    "medicines": ["Ambroxol syrup", "Steam inhalation", "Warm fluids"],
+    "specialist": "Pulmonologist",
+    "triage": "GENERAL_ADVICE",
+    "actions": ["Stay hydrated", "Avoid cold air", "Use steam inhalation"],
+    "image": "/static/images/bronchitis.png",
+    "related": ["Asthma", "Pneumonia", "Common Cold"]
+  },
+
+  "COVID-19": {
+    "description": "COVID-19 is a viral infection affecting the respiratory system causing fever, cough, loss of smell and fatigue.",
+    "medicines": ["Paracetamol", "Vitamin C", "Zinc", "ORS"],
+    "specialist": "General Physician",
+    "triage": "MODERATE",
+    "actions": ["Monitor oxygen", "Isolate", "Hydrate well", "Seek help if difficulty breathing"],
+    "image": "/static/images/covid.png",
+    "related": ["Flu", "Pneumonia", "Common Cold"]
+  },
+
+  "Common Cold": {
+    "description": "A mild viral infection causing sneezing, runny nose, sore throat, cough and mild fever.",
+    "medicines": ["Cetirizine", "Paracetamol", "Steam inhalation"],
+    "specialist": "General Physician",
+    "triage": "GENERAL_ADVICE",
+    "actions": ["Drink warm fluids", "Rest properly", "Take steam inhalation"],
+    "image": "/static/images/cold.png",
+    "related": ["Flu", "Allergy", "Bronchitis"]
+  },
+
+  "Dengue": {
+    "description": "Dengue is a mosquito-borne viral illness causing high fever, severe body pain, rash and weakness.",
+    "medicines": ["Paracetamol", "ORS", "Electrolytes"],
+    "specialist": "General Physician",
+    "triage": "MODERATE",
+    "actions": ["Avoid ibuprofen", "Drink ORS", "Monitor platelets", "Seek hospital care if severe"],
+    "image": "/static/images/dengue.png",
+    "related": ["Malaria", "Typhoid", "Flu"]
+  },
+
+  "Flu": {
+    "description": "Influenza (Flu) is a viral infection causing fever, cough, sore throat, headache and fatigue.",
+    "medicines": ["Paracetamol", "Antihistamines", "Cough syrup"],
+    "specialist": "General Physician",
+    "triage": "GENERAL_ADVICE",
+    "actions": ["Rest well", "Hydrate", "Avoid cold drinks"],
+    "image": "/static/images/flu.png",
+    "related": ["COVID-19", "Common Cold", "Dengue"]
+  },
+
+  "Food Poisoning": {
+    "description": "Food poisoning is caused by contaminated food leading to vomiting, diarrhea, stomach cramps and dehydration.",
+    "medicines": ["ORS solution", "Probiotics", "Ondansetron"],
+    "specialist": "Gastroenterologist",
+    "triage": "GENERAL_ADVICE",
+    "actions": ["Stay hydrated", "Avoid oily foods", "Eat bland diet", "Seek help if severe dehydration"],
+    "image": "/static/images/food_poisoning.png",
+    "related": ["Gastritis", "Diarrhea", "Typhoid"]
+  },
+
+  "Malaria": {
+    "description": "Malaria is a mosquito-borne disease causing high fever with chills, sweating and weakness.",
+    "medicines": ["Antimalarials (doctor prescribed)", "Paracetamol", "ORS"],
+    "specialist": "General Physician",
+    "triage": "MODERATE",
+    "actions": ["Stay hydrated", "Seek medical treatment", "Prevent mosquito bites"],
+    "image": "/static/images/malaria.png",
+    "related": ["Dengue", "Typhoid", "Flu"]
+  },
+
+  "Migraine": {
+    "description": "Migraine is a neurological condition causing intense throbbing headaches with nausea and light sensitivity.",
+    "medicines": ["Paracetamol", "Ibuprofen", "Dark room rest"],
+    "specialist": "Neurologist",
+    "triage": "GENERAL_ADVICE",
+    "actions": ["Avoid bright light", "Rest in dark room", "Hydrate well"],
+    "image": "/static/images/migraine.png",
+    "related": ["Headache", "Stress", "Flu"]
+  },
+
+  "Pneumonia": {
+    "description": "Pneumonia is a serious lung infection causing severe cough, fever, chest pain and shortness of breath.",
+    "medicines": ["Antibiotics (doctor prescribed)", "Cough syrup", "Paracetamol"],
+    "specialist": "Pulmonologist",
+    "triage": "SEVERE",
+    "actions": ["Seek immediate medical care", "Monitor oxygen", "Stay hydrated"],
+    "image": "/static/images/pneumonia.png",
+    "related": ["Bronchitis", "COVID-19", "Asthma"]
+  },
+
+  "Typhoid": {
+    "description": "Typhoid is a bacterial infection causing prolonged fever, abdominal pain, vomiting and weakness.",
+    "medicines": ["Antibiotics (doctor prescribed)", "ORS", "Paracetamol"],
+    "specialist": "General Physician",
+    "triage": "MODERATE",
+    "actions": ["Avoid spicy food", "Stay hydrated", "Complete antibiotic course"],
+    "image": "/static/images/typhoid.png",
+    "related": ["Malaria", "Food Poisoning", "Dengue"]
+  }
+}

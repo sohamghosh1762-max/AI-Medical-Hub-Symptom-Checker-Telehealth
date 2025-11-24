@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Settings — AI Medical Hub</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --primary: #2da9ff;
+    --card-bg: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.12);
+    --dark-bg:#050b18;
+    --dark-text:#fff;
+    --light-bg:#eef6ff;
+    --light-text:#000;
+  }
+
+  body{
+    margin:0;
+    font-family:'Poppins',sans-serif;
+    background:var(--dark-bg);
+    color:var(--dark-text);
+    display:flex;
+    height:100vh;
+    overflow:hidden;
+    transition:0.25s;
+  }
+  body.light{
+    background:var(--light-bg);
+    color:var(--light-text);
+  }
+
+  /* SIDEBAR */
+  .sidebar{
+    width:250px;
+    background:#0a1628;
+    padding:20px;
+    box-shadow:2px 0 20px rgba(0,0,0,0.5);
+  }
+  .logo-box img{width:80px}
+
+  .menu-item{
+    display:block;
+    padding:12px;
+    margin-bottom:10px;
+    cursor:pointer;
+    border-radius:10px;
+    text-decoration:none;
+    color:inherit;
+    transition:0.25s;
+  }
+  .menu-item:hover{
+    background:rgba(255,255,255,0.2);
+  }
+  .menu-item.active{
+    background:#2da9ff;
+    color:black;
+    font-weight:700;
+  }
+
+  .btn-red{
+    background:#ff4c4c;
+    color:white;
+  }
+
+  .main{
+    flex:1;
+    padding:25px;
+    overflow-y:auto;
+  }
+
+  .card{
+    background:var(--card-bg);
+    padding:20px;
+    border-radius:16px;
+    border:1px solid var(--border);
+    margin-top:25px;
+    backdrop-filter:blur(8px);
+  }
+
+  input{
+    width:100%;
+    padding:12px;
+    border-radius:10px;
+    border:none;
+    margin-bottom:15px;
+    background:#0e1c33;
+    color:white;
+  }
+  body.light input{
+    background:white;
+    color:black;
+    border:1px solid #ccc;
+  }
+
+  .btn{
+    padding:10px 16px;
+    background:#2da9ff;
+    border:none;
+    border-radius:8px;
+    font-weight:700;
+    cursor:pointer;
+    margin-right:10px;
+    color:black;
+  }
+  .btn:hover{opacity:0.85;}
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="logo-box" style="text-align:center;margin-bottom:20px;">
+    <img src="https://cdn-icons-png.flaticon.com/512/6009/6009864.png">
+    <h3>Admin Panel</h3>
+  </div>
+
+  <a href="{{ url_for('admin_dashboard') }}" class="menu-item">Dashboard</a>
+  <a href="{{ url_for('appointment_management') }}" class="menu-item">Appointments</a>
+  <a href="{{ url_for('doctor_management') }}" class="menu-item">Doctors</a>
+  <a href="{{ url_for('admin_settings') }}" class="menu-item active">Settings</a>
+
+  <div class="menu-item btn-red" onclick="logout()">Logout</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <h1>Admin Settings</h1>
+
+  <!-- CHANGE USERNAME -->
+  <div class="card">
+    <h3>Change Username</h3>
+    <input id="newUsername" placeholder="Enter new username">
+    <button class="btn" onclick="saveUsername()">Save Username</button>
+  </div>
+
+  <!-- CHANGE PASSWORD -->
+  <div class="card">
+    <h3>Change Password</h3>
+
+    <label>Old Password</label>
+    <input id="oldPass" type="password">
+
+    <label>New Password</label>
+    <input id="newPass" type="password">
+
+    <label>Confirm New Password</label>
+    <input id="confirmPass" type="password">
+
+    <button class="btn" onclick="savePassword()">Save Password</button>
+  </div>
+
+  <!-- THEME -->
+  <div class="card">
+    <h3>Theme Settings</h3>
+    <button class="btn" onclick="setLight()">Light Mode</button>
+    <button class="btn" onclick="setDark()">Dark Mode</button>
+    <button class="btn-red" onclick="resetTheme()">Reset Default</button>
+  </div>
+
+</div>
+
+<script>
+
+/* LOGIN CHECK */
+if (sessionStorage.getItem("admin_logged") !== "yes") {
+  window.location.href = "{{ url_for('admin_login') }}";
+}
+
+/* LOAD SETTINGS FROM LOCAL STORAGE */
+let settings = JSON.parse(localStorage.getItem("admin_settings") ||
+  JSON.stringify({
+    username:"admin",
+    password:"1234",
+    theme:"dark"
+  })
+);
+
+/* APPLY THEME */
+if(settings.theme === "light"){
+  document.body.classList.add("light");
+}
+
+/* SAVE USERNAME */
+function saveUsername(){
+  let u = newUsername.value.trim();
+  if(!u) return alert("Enter a valid username");
+
+  settings.username = u;
+  localStorage.setItem("admin_settings", JSON.stringify(settings));
+  alert("Username updated!");
+}
+
+/* SAVE PASSWORD */
+function savePassword(){
+  let oldP = oldPass.value;
+  let newP = newPass.value;
+  let cP = confirmPass.value;
+
+  if(oldP !== settings.password)
+    return alert("Old password is incorrect.");
+
+  if(newP.length < 4)
+    return alert("Password must be at least 4 characters.");
+
+  if(newP !== cP)
+    return alert("Passwords do not match!");
+
+  settings.password = newP;
+  localStorage.setItem("admin_settings", JSON.stringify(settings));
+
+  oldPass.value = "";
+  newPass.value = "";
+  confirmPass.value = "";
+
+  alert("Password updated!");
+}
+
+/* THEME TOGGLES */
+function setLight(){
+  document.body.classList.add("light");
+  settings.theme = "light";
+  localStorage.setItem("admin_settings", JSON.stringify(settings));
+}
+
+function setDark(){
+  document.body.classList.remove("light");
+  settings.theme = "dark";
+  localStorage.setItem("admin_settings", JSON.stringify(settings));
+}
+
+function resetTheme(){
+  document.body.classList.remove("light");
+  settings.theme = "dark";
+  localStorage.setItem("admin_settings", JSON.stringify(settings));
+  alert("Theme reset to default.");
+}
+
+/* LOGOUT */
+function logout(){
+  sessionStorage.removeItem("admin_logged");
+  window.location.href = "{{ url_for('admin_login') }}";
+}
+
+</script>
+
+</body>
+</html>

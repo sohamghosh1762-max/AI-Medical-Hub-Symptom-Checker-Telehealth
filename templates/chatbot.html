@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Chatbot — AI Medical Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --primary:#2da9ff;
+      --border:rgba(255,255,255,0.15);
+      --card:rgba(255,255,255,0.07);
+      --text:#e6eef6;
+    }
+
+    body{
+      margin:0;
+      font-family:Inter;
+      background:linear-gradient(180deg,#021018,#001a26);
+      color:var(--text);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      height:100vh;
+    }
+
+    .wrapper{
+      width:1100px;
+      max-width:100%;
+      display:grid;
+      grid-template-columns:1fr 350px;
+      gap:20px;
+    }
+
+    .panel{
+      background:rgba(0,0,0,0.35);
+      border-radius:12px;
+      padding:18px;
+      box-shadow:0 16px 50px rgba(0,0,0,0.5);
+    }
+
+    h2{margin-top:0;}
+
+    .chat-window{
+      display:flex;
+      flex-direction:column;
+      height:70vh;
+      border-radius:12px;
+      overflow:hidden;
+    }
+
+    .chat-logs{
+      flex:1;
+      padding:12px;
+      overflow:auto;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .msg{
+      max-width:80%;
+      padding:10px 12px;
+      border-radius:12px;
+      line-height:1.3;
+      font-size:14px;
+      animation:fadeUp 0.25s ease;
+    }
+
+    .msg.user{
+      align-self:flex-end;
+      background:linear-gradient(90deg,#2b6ef6,#1a4fe0);
+      color:white;
+    }
+
+    .msg.bot{
+      align-self:flex-start;
+      background:transparent;
+      color:var(--text);
+    }
+
+    .timestamp{
+      font-size:11px;
+      color:#9fb0c3;
+      margin-top:-8px;
+    }
+
+    .chat-input{
+      display:flex;
+      gap:8px;
+      padding:12px;
+      border-top:1px solid rgba(255,255,255,0.08);
+    }
+
+    input{
+      flex:1;
+      padding:10px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.08);
+      background:transparent;
+      color:white;
+    }
+
+    button{
+      padding:10px 14px;
+      border-radius:10px;
+      border:none;
+      cursor:pointer;
+      font-weight:700;
+    }
+
+    .btn{background:var(--primary);color:black;}
+    .ghost{background:transparent;border:1px solid rgba(255,255,255,0.2);color:#9fb0c3;}
+
+    .chat-card{
+      background:var(--card);
+      border:1px solid var(--border);
+      padding:16px;
+      border-radius:14px;
+      backdrop-filter:blur(8px);
+      box-shadow:0 4px 14px rgba(0,0,0,0.35);
+      animation:fadeUp 0.25s ease;
+      font-size:14px;
+    }
+
+    .chat-card img{
+      margin-top:12px;
+      width:100%;
+      border-radius:10px;
+    }
+
+    .chat-card ul{
+      margin:6px 0 10px 20px;
+    }
+
+    .chat-card b{ color:var(--primary); }
+
+    @keyframes fadeUp{
+      from{opacity:0;transform:translateY(6px);}
+      to{opacity:1;transform:translateY(0);}
+    }
+
+    .loader{
+      width:20px;
+      height:20px;
+      border:3px solid #fff;
+      border-top-color:#2da9ff;
+      border-radius:50%;
+      animation:spin 1s linear infinite;
+      margin:4px auto;
+    }
+    @keyframes spin{to{transform:rotate(360deg);}}
+
+    select{
+      padding:8px;
+      border-radius:8px;
+      border:1px solid var(--border);
+      background:#03202e;
+      color:white;
+    }
+  </style>
+</head>
+
+<body>
+<div class="wrapper">
+
+  <!-- LEFT CHAT PANEL -->
+  <div class="panel">
+    <h2>AI Medical Assistant</h2>
+
+    <label style="font-size:14px;">Response Tone:</label>
+    <select id="toneSelect">
+      <option value="normal">Normal</option>
+      <option value="friendly">Friendly</option>
+      <option value="professional">Professional 🧑‍⚕️</option>
+      <option value="detailed">Detailed</option>
+    </select>
+
+    <div class="chat-window">
+      <div id="chatLogs" class="chat-logs">
+        <div class="msg bot">Hi — I'm here to help. Describe your symptoms.</div>
+      </div>
+
+      <div class="chat-input">
+        <input id="chatInput" type="text" placeholder="e.g. I have fever and stomach pain">
+        <button class="ghost" onclick="startVoice()">🎤</button>
+        <button class="btn" onclick="sendChat()">Send</button>
+        <button class="ghost" onclick="clearChat()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="panel">
+    <div class="card">
+      <strong>Status</strong>
+      <div id="apiStatus" style="margin-bottom:10px;">Checking Backend...</div>
+
+      <button class="btn" onclick="downloadCSV()">Download History CSV</button>
+    </div>
+
+    <hr style="border-color:#0a2d3f;margin:15px 0;">
+
+    <div class="card">
+      <strong>Health Tip</strong>
+      <div id="healthTip" class="small" style="margin:6px 0;">Loading...</div>
+
+      <button class="ghost" onclick="loadTip()">Refresh Tip</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+
+const API_BASE = "http://127.0.0.1:5000";
+
+const chatLogs = document.getElementById("chatLogs");
+const chatInput = document.getElementById("chatInput");
+const apiStatus = document.getElementById("apiStatus");
+
+// ===== Chat memory (tone-aware) =====
+let chatHistory = [];
+
+// Append message to UI
+function appendChat(who, html){
+  const m = document.createElement("div");
+  m.className = "msg " + who;
+  m.innerHTML = html;
+  chatLogs.appendChild(m);
+
+  const t = document.createElement("div");
+  t.className = "timestamp";
+  t.innerText = new Date().toLocaleString();
+  chatLogs.appendChild(t);
+
+  chatLogs.scrollTop = chatLogs.scrollHeight;
+}
+
+// Remove loader
+function removeAnalyzing(){
+  const loaders = chatLogs.querySelectorAll(".loader");
+  loaders.forEach(loader => {
+    loader.parentElement.remove();
+  });
+}
+
+// Bot response card
+function appendBotFormatted(data){
+  let html = `
+    <div class="chat-card">
+      🩺 <b>Possible Disease:</b> ${data.disease}<br><br>
+
+      <b>Description:</b><br>${data.answer}<br><br>
+
+      <b>Recommended Medicines:</b>
+      <ul>${(data.medicine||[]).map(m => `<li>${m}</li>`).join("")}</ul>
+
+      <b>Recommended Specialist:</b> ${data.doctor}<br><br>
+
+      <b>Triage:</b> ${data.triage}<br>
+      <span class="small">${data.reason}</span><br><br>
+
+      <b>Actions:</b>
+      <ul>${(data.actions||[]).map(a => `<li>${a}</li>`).join("")}</ul>
+  `;
+
+  if(data.image){
+    html += `<img src="${data.image}">`;
+  }
+
+  html += `</div>`;
+  appendChat("bot", html);
+}
+
+// Send chat
+async function sendChat(){
+  const text = chatInput.value.trim();
+  if(!text) return;
+
+  appendChat("user", text);
+  chatInput.value = "";
+
+  // Add user message to memory
+  chatHistory.push({role:"user", text});
+
+  // Loader
+  appendChat("bot", `<div class='loader'></div>`);
+
+  try{
+    const res = await fetch(`${API_BASE}/api/chat`, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        text,
+        tone: document.getElementById("toneSelect").value,
+        history: chatHistory
+      })
+    });
+
+    const data = await res.json();
+    removeAnalyzing();
+    appendBotFormatted(data);
+
+    // Save bot message to history
+    chatHistory.push({role:"bot", text:data.answer});
+
+  } catch(err){
+    removeAnalyzing();
+    appendChat("bot", "Backend offline. Please try later.");
+  }
+}
+
+// Clear chat
+function clearChat(){
+  chatLogs.innerHTML = "";
+  appendChat("bot", "Chat cleared. Describe your symptoms again.");
+  chatHistory = [];
+}
+
+// Download CSV
+function downloadCSV(){
+  window.open(`${API_BASE}/api/export_history_csv`, "_blank");
+}
+
+// Load health tip
+async function loadTip(){
+  try{
+    const r = await fetch(`${API_BASE}/api/tips`);
+    const d = await r.json();
+    document.getElementById("healthTip").innerText = d.tip;
+  } catch{
+    document.getElementById("healthTip").innerText = "Unable to load tip.";
+  }
+}
+
+// Speech-to-text
+function startVoice(){
+  const rec = new webkitSpeechRecognition();
+  rec.lang = "en-IN";
+  rec.onresult = e => {
+    chatInput.value = e.results[0][0].transcript;
+  };
+  rec.start();
+}
+
+// Backend status
+async function checkApi(){
+  try{
+    const r = await fetch(`${API_BASE}/api/ping`);
+    apiStatus.textContent = r.ok ? "Online" : "Offline";
+  } catch{
+    apiStatus.textContent = "Offline";
+  }
+}
+checkApi();
+setInterval(checkApi, 10000);
+
+// Load tip on start
+loadTip();
+
+// Enter key support
+chatInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") sendChat();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1395 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Medical Hub — Symptom Checker & Telehealth (Upgraded)</title>
+  <meta name="description" content="AI Medical Hub — Symptom triage, consult doctors, emergency healthline, staff directory, and guided chatbot." />
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- jsPDF for PDF receipts -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+  <style>
+    /* ===========================
+       Design tokens (upgraded)
+       =========================== */
+    :root{
+      --bg-dark:#041126;
+      --bg-soft:#eaf6ff;
+      --panel:#071634;
+      --glass: rgba(255,255,255,0.045);
+      --accent: #2da9ff;
+      --accent-2: #7dd3fc;
+      --muted:#9fb0c3;
+      --danger:#ff6b6b;
+      --success:#4ade80;
+      --card-radius:14px;
+      --glass-border: rgba(255,255,255,0.06);
+      --glass-blur: 14px;
+      --shadow-dark: 0 14px 40px rgba(3,6,18,0.55);
+      --shadow-soft: 0 8px 26px rgba(2,8,30,0.28);
+      --max-width:1200px;
+      --ui-gap:14px;
+      --font-sans: 'Inter', 'Poppins', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:var(--font-sans);
+      color: #e6eef6;
+      background:
+        radial-gradient(900px 450px at 12% 8%, rgba(45,169,255,0.05), transparent),
+        linear-gradient(180deg,var(--bg-dark), #021018);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      min-height:100vh;
+      line-height:1.45;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .container{max-width:var(--max-width);margin:28px auto;padding:22px}
+
+    /* Header */
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+    .brand{display:flex;align-items:center;gap:14px}
+    .logo{
+      width:64px;height:64px;border-radius:14px;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      display:flex;align-items:center;justify-content:center;font-weight:800;color:#02111b;font-family:'Poppins';
+      box-shadow: 0 10px 30px rgba(10,20,40,0.65);
+      font-size:20px;
+    }
+    .brand h1{margin:0;font-size:18px}
+    nav{display:flex;gap:12px;align-items:center}
+    nav a{color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:10px;font-size:14px;transition:all .18s}
+    nav a:hover{color:#fff;background:rgba(255,255,255,0.03);transform:translateY(-2px)}
+    .muted{color:var(--muted);font-size:13px}
+
+    /* Layout */
+    .hero{display:grid;grid-template-columns:1fr 420px;gap:24px;margin-top:22px;align-items:start}
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:var(--card-radius);
+      box-shadow:var(--shadow-dark);
+      padding:20px;
+      backdrop-filter: blur(var(--glass-blur));
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .card:focus-within{outline: 2px solid rgba(45,169,255,0.06)}
+    .card:hover{transform:translateY(-6px);box-shadow:0 28px 70px rgba(2,6,20,0.75)}
+    h2{margin:0;font-size:26px}
+
+    .cta-row{display:flex;gap:12px;margin-top:16px}
+    .btn{padding:10px 14px;border-radius:12px;border:none;cursor:pointer;font-weight:700;font-size:14px}
+    .btn:focus{outline:3px solid rgba(45,169,255,0.12)}
+    .btn-primary{
+      background:linear-gradient(90deg,var(--accent),var(--accent-2));
+      color:#02111b; box-shadow: 0 8px 18px rgba(45,169,255,0.12);
+    }
+    .btn-ghost{
+      background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)
+    }
+
+    /* Feature cards */
+    .features{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+    .feature{
+      padding:14px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.012),transparent);
+      text-align:center;transition:transform .18s ease, box-shadow .18s;
+      border: 1px solid rgba(255,255,255,0.02);
+    }
+    .feature:hover{transform:translateY(-6px);box-shadow:var(--shadow-soft)}
+
+    /* Quick input */
+    .row{display:flex;gap:10px;align-items:center}
+    input[type="text"], textarea, select{
+      padding:12px;border-radius:10px;border:1px solid var(--glass-border);background:linear-gradient(180deg, rgba(255,255,255,0.015), transparent);color:inherit;width:100%;
+    }
+    textarea{resize:vertical;min-height:78px;}
+    .mic-btn{
+      width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;color:#02111b;box-shadow:0 8px 18px rgba(45,169,255,.25)
+    }
+    .mic-btn:active{transform:scale(.96)}
+
+    /* Wizard steps */
+    .symptom-wizard{display:flex;flex-direction:column;gap:10px}
+    .steps{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .step{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.03);font-size:13px;cursor:pointer;border:1px solid rgba(255,255,255,0.02)}
+    .active-step{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#02111b;box-shadow:0 6px 20px rgba(45,169,255,0.08)}
+
+    .questions.card{padding:16px;margin-top:12px}
+
+    /* Doctors */
+    .doctors{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+    .doctor-card{
+      display:flex;gap:12px;align-items:center;padding:16px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      box-shadow: var(--shadow-soft); position:relative; overflow:hidden; transition:transform .18s ease, box-shadow .18s ease;
+    }
+    .doctor-card:hover{transform:translateY(-8px);box-shadow:0 18px 40px rgba(0,0,0,0.55)}
+    .doc-avatar{width:70px;height:70px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:#02111b;font-weight:800;box-shadow:0 6px 20px rgba(45,169,255,0.25)}
+    .badge{font-size:11px;padding:4px 8px;border-radius:10px;background:rgba(255,255,255,0.06);color:#bfefff}
+
+    .dot-online{width:10px;height:10px;background:var(--success);border-radius:50%;margin-right:6px;display:inline-block;box-shadow:0 4px 12px rgba(74,222,128,0.12);animation:pulseOnline 1.4s infinite}
+    @keyframes pulseOnline{0%{transform:scale(.9);opacity:.7}50%{transform:scale(1.2);opacity:1}100%{transform:scale(.9);opacity:.7}}
+
+    /* Body map */
+    .body-map{display:flex;justify-content:center;margin-top:14px;position:relative}
+    .body-map img{width:280px;opacity:.99;display:block;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.45)}
+    .hotspot{
+      position:absolute; width:28px; height:28px; border-radius:50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.35), rgba(255,255,255,0.06)), rgba(45,169,255,0.26);
+      border:2px solid rgba(255,255,255,0.85);
+      transform: translate(-50%, -50%); cursor:pointer; transition: transform .18s ease, box-shadow .18s, opacity .18s;
+      box-shadow: 0 6px 18px rgba(45,169,255,0.08);
+      display:flex;align-items:center;justify-content:center;font-size:12px;color:#02111b;font-weight:700;
+    }
+    .hotspot:hover{transform: translate(-50%, -50%) scale(1.22); box-shadow: 0 10px 28px rgba(45,169,255,0.18)}
+    .hotspot.pulse{animation:hotPulse 1.6s infinite}
+    @keyframes hotPulse{0%{transform: translate(-50%,-50%) scale(.95);opacity:.8}50%{transform: translate(-50%,-50%) scale(1.18);opacity:1}100%{transform: translate(-50%,-50%) scale(.95);opacity:.8}}
+
+    /* Chat window */
+    .chat-floating{position:fixed;right:22px;bottom:22px;z-index:1000}
+    .chat-btn{width:72px;height:72px;border-radius:18px;background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none;color:#02111b;font-weight:700;cursor:pointer;box-shadow:0 12px 40px rgba(10,30,60,0.6)}
+    .chat-window{position:fixed;right:22px;bottom:110px;width:420px;max-height:72vh;background:linear-gradient(180deg, rgba(8,18,30,0.98), rgba(2,6,23,0.96));border-radius:16px;padding:12px;box-shadow:0 30px 80px rgba(0,0,0,0.7);display:flex;flex-direction:column;z-index:1100}
+    .chat-logs{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:10px}
+    .msg{max-width:78%;padding:12px;border-radius:12px}
+    .msg.bot{background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); align-self:flex-start}
+    .msg.user{background: linear-gradient(90deg,#2b6ef6,#1a4fe0); align-self:flex-end; color:#fff}
+    .timestamp{font-size:11px;color:var(--muted);margin-top:6px;opacity:0.9}
+    .chat-input-row{display:flex;gap:8px;margin-top:8px}
+
+    /* Severity badges */
+    .sev-badge{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:700;font-size:13px}
+    .sev-mild{background:rgba(74,222,128,0.12);color:var(--success)}
+    .sev-moderate{background:rgba(255,201,71,0.08);color:#ffc857}
+    .sev-severe{background:rgba(255,107,107,0.08);color:var(--danger)}
+
+    /* Modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1200}
+    .modal{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:18px;border-radius:12px;width:540px;box-shadow:0 20px 60px rgba(0,0,0,0.75)}
+    .danger-banner{background:linear-gradient(90deg,#ff6b6b,#ff5656);padding:10px;border-radius:8px;color:#02111b;font-weight:800}
+
+    .small{font-size:13px;color:var(--muted)}
+    .muted-2{color:#b9dff2;font-size:13px}
+
+    /* analytics */
+    .analytics{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+    .stat{flex:1;min-width:160px;padding:12px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.015),transparent);border:1px solid rgba(255,255,255,0.02)}
+
+    .fade-in{animation:fadeIn .45s cubic-bezier(.2,.9,.2,1) both}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+    /* responsive */
+    @media (max-width:980px){ .hero{grid-template-columns:1fr} .doctors{grid-template-columns:repeat(2,1fr)} .team{grid-template-columns:repeat(2,1fr)} }
+    @media (max-width:560px){ nav{display:none} header{gap:8px} .body-map img{width:220px} .chat-window{right:12px;left:12px;width:auto} .doctors{grid-template-columns:1fr} .team{grid-template-columns:1fr} .modal{width:92%} }
+  </style>
+</head>
+
+<body>
+  <div class="container" role="main">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true">AI</div>
+        <div>
+          <h1>AI Medical Hub</h1>
+          <div class="muted" style="font-size:13px">Symptom triage • Telehealth • Emergency • Clinician review</div>
+        </div>
+      </div>
+
+      <nav aria-label="Primary">
+        <a href="#symptoms">Symptom Check</a>
+        <a href="#consult">Consult</a>
+        <a href="#emergency">Emergency</a>
+        <a href="#staff">Staff</a>
+        <a href="#chat" onclick="openChat();return false;">Chatbot</a>
+        <button class="btn btn-ghost" id="themeToggle" title="Toggle theme">Toggle theme</button>
+      </nav>
+    </header>
+
+    <section class="hero" aria-labelledby="hero-heading">
+      <div class="card fade-in" tabindex="0">
+        <h2 id="hero-heading">Intelligent symptom triage — fast, safe, and clinically conservative</h2>
+        <p class="muted" style="margin-top:8px">Start with a guided symptom check, chat with our assistant, request a clinician review, or call emergency services.</p>
+
+        <div class="cta-row" style="margin-top:14px">
+          <button class="btn btn-primary" onclick="document.querySelector('#symptoms').scrollIntoView({behavior:'smooth'})">Start Symptom Check</button>
+          <button class="btn btn-ghost" onclick="document.querySelector('#consult').scrollIntoView({behavior:'smooth'})">Find Doctors</button>
+        </div>
+
+        <div class="features" style="margin-top:18px;">
+          <div class="feature" aria-hidden="true">
+            <div style="font-size:22px">🩺</div>
+            <h4 style="margin:6px 0">Symptom Triage</h4>
+            <div class="muted" style="font-size:13px">Safety-first rule engine + clinician review</div>
+          </div>
+          <div class="feature" aria-hidden="true">
+            <div style="font-size:22px">📞</div>
+            <h4 style="margin:6px 0">Emergency Line</h4>
+            <div class="muted" style="font-size:13px">Quick-call & escalation flow</div>
+          </div>
+          <div class="feature" aria-hidden="true">
+            <div style="font-size:22px">🤝</div>
+            <h4 style="margin:6px 0">Clinician Review</h4>
+            <div class="muted" style="font-size:13px">Request clinician follow-up or teleconsult</div>
+          </div>
+        </div>
+
+        <!-- Quick condition predictions -->
+        <div style="margin-top:18px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="font-weight:800">Quick condition predictions</div>
+            <div class="small muted">Estimates only — conservative</div>
+          </div>
+          <div id="quickPredictions" style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap"></div>
+        </div>
+      </div>
+
+      <aside class="card fade-in" tabindex="0" aria-live="polite">
+        <h3 style="margin:0">Quick symptom scan</h3>
+        <p class="muted" style="margin-top:6px">Type a short description — the assistant will suggest clarifying questions and possible red flags.</p>
+
+        <div style="margin-top:12px">
+          <div class="row">
+            <input id="quickInput" aria-label="Quick symptom input" type="text" placeholder="e.g. Fever, cough, mild shortness of breath">
+            <button class="mic-btn" id="micQuickBtn" title="Speak symptoms" aria-label="Speak symptoms" onclick="startVoiceQuick()">🎙</button>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button id="quickBtn" class="btn btn-primary" onclick="quickCheck()">Analyze</button>
+            <button class="btn btn-ghost" onclick="openChat()">Discuss with Chatbot</button>
+          </div>
+          <div id="quickResult" style="margin-top:10px" class="muted" aria-live="polite"></div>
+          <div id="suggestions" style="margin-top:10px" class="muted small"></div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- Symptom checker -->
+    <section id="symptoms" style="margin-top:22px" aria-labelledby="symptom-heading">
+      <div class="card">
+        <h3 id="symptom-heading">Symptom Checker</h3>
+
+        <div class="symptom-wizard" id="wizard">
+          <div class="steps" id="stepBar" role="tablist" aria-label="Symptom steps">
+            <div class="step active-step" data-step="1" role="tab" tabindex="0" aria-selected="true">1. Describe</div>
+            <div class="step" data-step="2" role="tab" tabindex="0" aria-selected="false">2. Duration</div>
+            <div class="step" data-step="3" role="tab" tabindex="0" aria-selected="false">3. Severity</div>
+            <div class="step" data-step="4" role="tab" tabindex="0" aria-selected="false">4. Review</div>
+          </div>
+
+          <div class="questions card" style="margin-top:12px">
+            <!-- Step 1 -->
+            <div class="step-panel" data-panel="1">
+              <div class="field">
+                <label for="symptomsText">What symptoms are you experiencing?</label>
+                <textarea id="symptomsText" rows="3" placeholder="Describe freely: e.g. fever, cough, chest tightness..." aria-label="Describe symptoms"></textarea>
+                <div class="muted small">The assistant may ask clarifying questions if needed. You can also tap body parts below or use voice input from the top quick-scan.</div>
+              </div>
+
+              <div style="margin-top:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div style="font-weight:700">Tap where it hurts:</div>
+                  <div style="display:flex;gap:8px;align-items:center">
+                    <label class="small" style="margin-right:6px">Gender</label>
+                    <button id="maleBtn" class="btn btn-ghost" onclick="showGender('male')">Male</button>
+                    <button id="femaleBtn" class="btn btn-ghost" onclick="showGender('female')">Female</button>
+                  </div>
+                </div>
+
+                <div class="body-map" style="margin-top:8px">
+                  <img id="bodyImg" src="" alt="body map (click hotspots)">
+                  <!-- hotspots are injected by JS -->
+                </div>
+              </div>
+
+              <div class="row" style="margin-top:12px">
+                <button id="next1" class="btn btn-primary" onclick="nextStep()" aria-controls="step-2">Next</button>
+                <button class="btn btn-ghost" onclick="openChat()">Chat with assistant</button>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step-panel" data-panel="2" style="display:none">
+              <div class="field">
+                <label for="duration">How long have these symptoms been present?</label>
+                <select id="duration" aria-label="Duration">
+                  <option value="0-1">0–24 hours</option>
+                  <option value="1-3">1–3 days</option>
+                  <option value="4-14">4–14 days</option>
+                  <option value="14+">More than 14 days</option>
+                </select>
+              </div>
+              <div style="margin-top:8px">
+                <button class="btn btn-primary" onclick="nextStep()">Next</button>
+                <button class="btn btn-ghost" onclick="prevStep()">Back</button>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="step-panel" data-panel="3" style="display:none">
+              <div class="field">
+                <label for="severity">Severity (how bad are symptoms?)</label>
+                <select id="severity" aria-label="Severity" onchange="updateSeverityPreview()">
+                  <option value="mild">Mild - manage at home</option>
+                  <option value="moderate">Moderate - consider GP</option>
+                  <option value="severe">Severe - consider urgent care</option>
+                </select>
+              </div>
+              <div style="margin-top:8px">
+                <label for="age">Age (optional)</label>
+                <input id="age" type="text" placeholder="e.g. 34" aria-label="Age">
+              </div>
+
+              <div style="margin-top:12px;display:flex;align-items:center;gap:12px">
+                <div id="severityPreview" class="sev-badge sev-mild">Mild</div>
+                <div style="flex:1"></div>
+                <div>
+                  <button class="btn btn-primary" onclick="nextStep()">Review</button>
+                  <button class="btn btn-ghost" onclick="prevStep()">Back</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="step-panel" data-panel="4" style="display:none">
+              <h4>Review & get recommendation</h4>
+              <div id="reviewBox" style="margin-top:8px" aria-live="polite"></div>
+              <div style="margin-top:12px;display:flex;gap:8px">
+                <button id="getRec" class="btn btn-primary" onclick="runTriage()">Get Recommendation</button>
+                <button class="btn btn-ghost" onclick="prevStep()">Back</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- analytics mini -->
+        <div style="margin-top:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">Your mini analytics</div>
+            <div class="small muted">Local only</div>
+          </div>
+          <div class="analytics" id="analyticsPanel" style="margin-top:10px">
+            <div class="stat">
+              <div class="muted">Check-ins</div>
+              <div id="statChecks" style="font-weight:800;font-size:18px">0</div>
+            </div>
+            <div class="stat">
+              <div class="muted">Last triage</div>
+              <div id="statTriage" style="font-weight:800;font-size:18px">—</div>
+            </div>
+            <div class="stat">
+              <div class="muted">Last symptom</div>
+              <div id="statSymptom" style="font-weight:800;font-size:14px">—</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===============================================
+     PHASE 1: SMART HEALTH FEATURES (UI ADDONS)
+     =============================================== -->
+<section id="smartFeatures" style="margin-top:22px">
+  <div class="card fade-in">
+
+    <h3>Smart Health Tools</h3>
+    <p class="muted">Advanced tracking & personalization tools</p>
+
+    <!-- Health Profile -->
+    <div style="margin-top:18px">
+      <h4>Your Health Profile</h4>
+      <div class="muted small">Stored locally — improves analyses.</div>
+
+      <div style="margin-top:8px" class="row">
+        <input id="profileAge" type="text" placeholder="Age" style="max-width:120px">
+        <input id="profileWeight" type="text" placeholder="Weight (kg)" style="max-width:140px">
+        <input id="profileAllergies" type="text" placeholder="Allergies (e.g., Penicillin)">
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <input id="profileConditions" type="text" placeholder="Chronic diseases (diabetes, BP, asthma)">
+      </div>
+
+      <button class="btn btn-primary" onclick="saveHealthProfile()" style="margin-top:10px">Save Profile</button>
+      <button class="btn btn-ghost" onclick="clearHealthProfile()" style="margin-left:10px;margin-top:10px">Clear</button>
+
+      <div id="profileSavedMsg" class="small muted" style="margin-top:8px"></div>
+    </div>
+
+    <hr style="margin:20px 0;border:0;border-top:1px solid rgba(255,255,255,0.07)">
+
+    <!-- Symptom Timeline -->
+    <div>
+      <h4>Symptom Timeline</h4>
+      <div class="muted small">Tracks all previous checks with severity.</div>
+      <div id="timelineBox" style="margin-top:10px"></div>
+    </div>
+
+    <hr style="margin:20px 0;border:0;border-top:1px solid rgba(255,255,255,0.07)">
+
+    <!-- Daily health tips -->
+    <div>
+      <h4>Daily Health Tip</h4>
+      <div class="muted small">Auto-refreshes every 24 hours.</div>
+      <div id="healthTip" style="margin-top:10px;font-weight:600"></div>
+      <button class="btn btn-ghost" style="margin-top:10px" onclick="newHealthTip()">Refresh Tip</button>
+    </div>
+
+    <hr style="margin:20px 0;border:0;border-top:1px solid rgba(255,255,255,0.07)">
+
+    <!-- Language -->
+    <div>
+      <h4>Language</h4>
+      <div class="muted small">Auto-detects input language.</div>
+      <select id="languageSel" style="margin-top:10px" onchange="setLanguage()">
+        <option value="auto">Auto</option>
+        <option value="en">English</option>
+        <option value="hi">Hindi</option>
+        <option value="bn">Bengali</option>
+        <option value="ta">Tamil</option>
+        <option value="te">Telugu</option>
+      </select>
+      <div class="small muted" style="margin-top:8px">Current: <span id="langStatus">Auto</span></div>
+    </div>
+
+  </div>
+</section>
+
+
+    <!-- Consult doctors -->
+    <section id="consult" style="margin-top:22px">
+      <div class="card">
+        <h3>Consult Doctors</h3>
+        <p class="muted">Select a specialist and request an appointment or callback.</p>
+
+        <div class="doctors" style="margin-top:12px" id="doctorsList"></div>
+
+        <div style="margin-top:12px" id="appointmentListContainer"></div>
+      </div>
+    </section>
+
+    <!-- Emergency -->
+    <section id="emergency" style="margin-top:22px">
+      <div class="card emergency" style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+        <div>
+          <div class="muted" style="font-size:13px">In an emergency</div>
+          <div class="big" style="font-size:20px;font-weight:800;color:var(--danger)">Call Emergency Services: <span id="emNumber">+1 555 911</span></div>
+          <div class="muted" style="margin-top:6px">Local ambulance • poison control • mental health crisis lines</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button class="btn" style="background:linear-gradient(90deg,#ff7b7b,#ff5656);color:#02111b;border-radius:12px;padding:12px 14px" onclick="callNow()">Call Now</button>
+          <button class="btn btn-ghost" onclick="openChat()">Chat for guidance</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Staff -->
+    <section id="staff" style="margin-top:22px">
+      <div class="card">
+        <h3>Our Medical Team</h3>
+        <div class="team" id="teamGrid" style="margin-top:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px"></div>
+      </div>
+    </section>
+
+    <footer style="margin-top:22px;text-align:center" class="muted">
+      © <span id="year"></span> AI Medical Hub — Triage tool for guidance only. Not a replacement for professional medical advice.
+    </footer>
+  </div>
+
+  <!-- Floating Chat -->
+  <div class="chat-floating" aria-hidden="false">
+    <button class="chat-btn" title="Open assistant" id="floatingChatBtn" aria-label="Open assistant" onclick="toggleChat()">💬</button>
+  </div>
+
+  <!-- Chat window -->
+  <div id="chatWindow" class="chat-window" style="display:none" role="dialog" aria-label="Assistant chat">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-weight:700">AI Medical Assistant</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="muted" id="chatStatus">offline</div>
+        <button class="btn btn-ghost" onclick="closeChat()">Close</button>
+      </div>
+    </div>
+
+    <div id="chatLogs" class="chat-logs" aria-live="polite">
+      <div class="msg bot">Hi — I'm here to help. Describe how you feel or choose a feature from the site.</div>
+    </div>
+
+    <div class="chat-input-row">
+      <input id="chatInput" type="text" placeholder="Describe symptoms or ask a question..." style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit" aria-label="Chat input">
+      <button id="chatSendBtn" class="btn btn-primary" onclick="sendChat()">Send</button>
+    </div>
+    <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+      <div class="muted small">This assistant provides triage guidance only.</div>
+      <div id="chatHints" class="small muted-2">Try: "I have fever and cough"</div>
+    </div>
+  </div>
+
+  <!-- Admin panel -->
+  <div id="adminPanel" class="admin-panel" style="display:none;position:fixed;left:22px;top:90px;width:320px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:12px;padding:12px;box-shadow:0 18px 50px rgba(0,0,0,0.6);z-index:1100">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-weight:700">Admin</div>
+      <button class="btn btn-ghost" onclick="toggleAdmin()">Close</button>
+    </div>
+    <div id="adminContent" class="muted small">Loading...</div>
+  </div>
+
+  <!-- Modal root -->
+  <div id="modalRoot" style="display:none"></div>
+
+  <script>
+    /* =========================
+       Utility & state
+       ========================= */
+    const ESC_KEY = 27; const ENTER_KEY = 13;
+    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>",'\/'`=]/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'})[s]); }
+    function isoNow(){ return new Date().toLocaleString(); }
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // -------------------------
+    // Seeds & data
+    // -------------------------
+    const DOCTORS = [
+      {id:'aarti',name:'Dr. Aarti Anand',role:'General Physician',exp:12,avatar:'AA', available:true, rating:4.7, bio:'MBBS, MD (General Medicine). Experience: primary care, chronic disease management.' , slots: ['09:00','10:00','14:00','16:00']},
+      {id:'rohan',name:'Dr. Rohan Kapoor',role:'Pulmonologist',exp:9,avatar:'RK', available:true, rating:4.6, bio:'Pulmonology specialist — asthma, COPD, respiratory infections.', slots:['11:00','13:00','15:00']},
+      {id:'suman',name:'Dr. Suman Mishra',role:'Pediatrician',exp:7,avatar:'SM', available:false, rating:4.5, bio:'Paediatric care, immunization, growth monitoring.', slots:['10:00','12:00']},
+      {id:'neha',name:'Dr. Neha Verma',role:'Psychiatrist',exp:8,avatar:'NV', available:true, rating:4.8, bio:'Mental health care: depression, anxiety, CBT-informed therapy.', slots:['09:30','11:30','14:30']},
+      {id:'vikas',name:'Dr. Vikas Rao',role:'Cardiologist',exp:15,avatar:'VR', available:true, rating:4.9, bio:'Cardiology: hypertension, chest pain, preventive cardiology.', slots:['10:30','13:30','16:30']},
+      {id:'maya',name:'Dr. Maya Sen',role:'Dermatologist',exp:6,avatar:'MS', available:false, rating:4.4, bio:'Skin disorders: rashes, acne, eczema.', slots:['15:00']},
+      { id:'arjun', name:'Dr. Arjun Mehta', role:'Neurologist', exp:11, avatar:'AM',
+  rating:4.8, bio:'Neurology expert — migraine, seizures, neuropathy, stroke evaluation.',
+  slots:['09:00','11:00','15:00'] },
+
+{ id:'priya', name:'Dr. Priya Nair', role:'Gynecologist', exp:10, avatar:'PN', available:true,
+  rating:4.7, bio:'Women’s health specialist — PCOS, pregnancy care, menstrual disorders.',
+  slots:['10:00','12:00','14:00'] },
+
+{ id:'imran', name:'Dr. Imran Sheikh', role:'Orthopedic Surgeon', exp:14, avatar:'IS', available:true,
+  rating:4.9, bio:'Orthopedics — fractures, back pain, arthritis, joint pain specialist.',
+  slots:['09:30','13:00','16:00'] },
+
+{ id:'anita', name:'Dr. Anita Bose', role:'ENT Specialist', exp:8, avatar:'AB', available:true,
+  rating:4.5, bio:'ENT specialist — ear infections, sinusitis, hearing issues.',
+  slots:['11:00','14:00'] },
+
+{ id:'rahul', name:'Dr. Rahul Sen', role:'Endocrinologist', exp:13, avatar:'RS', available:true,
+  rating:4.8, bio:'Hormone and metabolism expert — diabetes, thyroid disorders.',
+  slots:['10:00','12:30','15:30'] },
+
+{ id:'kavita', name:'Dr. Kavita Jain', role:'Ophthalmologist', exp:9, avatar:'KJ', available:true,
+  rating:4.6, bio:'Eye specialist — vision check, cataract evaluation, infections.',
+  slots:['09:30','11:30','14:00'] },
+
+{ id:'arav', name:'Dr. Arav Gupta', role:'Nephrologist', exp:12, avatar:'AG', available:false,
+  rating:4.7, bio:'Kidney specialist — kidney stones, CKD, electrolyte imbalance.',
+  slots:['10:00','13:00'] },
+
+{ id:'sunita', name:'Dr. Sunita Roy', role:'Gastroenterologist', exp:15, avatar:'SR', available:true,
+  rating:4.9, bio:'Digestive system specialist — acidity, IBS, liver & stomach issues.',
+  slots:['09:00','12:00','16:00'] },
+
+{ id:'harsh', name:'Dr. Harsh Malhotra', role:'Urologist', exp:10, avatar:'HM', available:true,
+  rating:4.6, bio:'Urology — urinary infections, prostate care, kidney stone management.',
+  slots:['10:30','13:30','15:00'] },
+
+{ id:'meera', name:'Dr. Meera Sharma', role:'Dermatologist', exp:7, avatar:'MS', available:true,
+  rating:4.5, bio:'Skincare expert — acne, pigmentation, allergies, cosmetic dermatology.',
+  slots:['11:00','13:00','15:00'] },
+
+    ];
+
+function loadAdminDoctors(){
+  return JSON.parse(localStorage.getItem("ai_medical_doctors") || "[]");
+}
+
+/* ======================================================
+   MERGE BUILT-IN + ADMIN ADDED DOCTORS
+   ====================================================== */
+function getAllDoctors(){
+  const adminDocs = loadAdminDoctors();
+
+  const adminFormatted = adminDocs.map(d => {
+    const initials = (d.name.match(/\b\w/g) || []).join('').substring(0,2).toUpperCase();
+    return {
+      id: "admin_" + d.id,
+      name: d.name,
+      role: d.spec || "Doctor",
+      exp: 5,
+      avatar: initials,
+      available: true,
+      rating: 4.5,
+      bio: "Consultation available.",
+      slots: ['09:00','11:00','14:00']
+    };
+  });
+
+  return [...BUILTIN_DOCTORS, ...adminFormatted];
+}
+
+/* ======================================================
+   RENDER DOCTORS IN INDEX.HTML
+   ====================================================== */
+function renderDoctors(){
+  const docs = getAllDoctors();
+  const el = document.getElementById("doctorsList");
+  el.innerHTML = "";
+
+  docs.forEach(d => {
+    const card = document.createElement("div");
+    card.className = "doctor-card fade-in";
+    card.innerHTML = `
+      <div class="doc-avatar">${d.avatar}</div>
+      <div style="flex:1">
+        <div style="font-size:16px;font-weight:800">${d.name}</div>
+        <div class="muted small">${d.role} • ${d.exp} yrs</div>
+        <div style="margin-top:6px">
+          <span class="badge">Available Today</span>
+        </div>
+        <div style="margin-top:8px" class="small muted-2">Rating: ${d.rating} ★</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+        <button class="btn btn-primary" onclick="openDoctorModal('${d.id}')">View</button>
+        <button class="btn btn-ghost" onclick="openBooking('${d.id}')">Book</button>
+      </div>
+    `;
+    el.appendChild(card);
+  });
+}
+
+// INITIAL LOAD
+renderDoctors();
+
+    /* ===============================
+   ADVANCED DOCTOR SPECIALIST MAP
+   =============================== */
+const MEDICAL_MAP = [
+  { category: "Respiratory", keywords: ["cough","breath","wheeze","phlegm","lung","congestion"], doctorRole: "Pulmonologist" },
+  { category: "Cardiac", keywords: ["chest pain","heart","palpitation","tightness"], doctorRole: "Cardiologist" },
+  { category: "Dermatology", keywords: ["rash","itch","pimple","skin","eczema","spots"], doctorRole: "Dermatologist" },
+  { category: "Gastro", keywords: ["stomach","vomit","gastric","abdomen","diarrhea","acidity"], doctorRole: "Gastroenterologist" },
+  { category: "Neurology", keywords: ["headache","migraine","tingling","seizure"], doctorRole: "Neurologist" },
+  { category: "Psychiatry", keywords: ["anxiety","stress","panic","fear","sleep"], doctorRole: "Psychiatrist" },
+  { category: "Orthopedic", keywords: ["back pain","joint","knee","shoulder","bone"], doctorRole: "Orthopedic Surgeon" },
+  { category: "Gynecology", keywords: ["period","pregnancy","menstrual","cramps"], doctorRole: "Gynecologist" },
+  { category: "Pediatrics", keywords: ["child","baby","infant"], doctorRole: "Pediatrician" }
+];
+
+/* ===============================
+   FIND THE BEST SPECIALIST
+   =============================== */
+function findSpecialist(symptoms){
+  const t = symptoms.toLowerCase();
+  let matched = null;
+
+  for (let rule of MEDICAL_MAP){
+    if (rule.keywords.some(k => t.includes(k))){
+      matched = rule;
+      break;
+    }
+  }
+
+  if(!matched) return null;
+
+  const candidates = DOCTORS.filter(d => d.role === matched.doctorRole);
+  if(!candidates.length) return null;
+
+  const primary = candidates.find(d => d.available) || candidates[0];
+  const backup = candidates[1] || null;
+
+  return { category: matched.category, primary, backup };
+}
+
+
+    const TEAM = [
+      {name:'Dr. Aarti Anand',role:'General Physician'},
+      {name:'Dr. Rohan Kapoor',role:'Pulmonologist'},
+      {name:'Dr. Suman Mishra',role:'Pediatrician'},
+      {name:'Nurse Team',role:'24/7 Nursing Care'}
+    ];
+
+    // local storage keys
+    const APPT_KEY = 'ai_medical_appointments_v2';
+    const CHECKS_KEY = 'ai_medical_checks_v1';
+
+    // red flags regex (kept conservative)
+    const RED_FLAGS = ['\\bchest pain\\b','\\bdifficulty breathing\\b','\\bnot breathing\\b','\\bsevere bleeding\\b','\\bunconscious\\b','\\bsudden weakness\\b','\\bslurred speech\\b','\\bbluish\\b',"\\bcouldn'?t breathe\\b","\\bsuicid(al|e)\\b","\\btrying to end my life\\b","\\bfainting\\b"];
+    const RED_FLAG_RE = new RegExp(RED_FLAGS.join('|'), 'i');
+    function containsRedFlag(text){ if(!text) return false; return RED_FLAG_RE.test(text.toLowerCase()); }
+
+    // Suggestion map for quick suggestions and chat hints
+    const suggestionMap = [
+      {keywords:['fever','temperature'],'suggest':'How high is the fever? Any chills or sweating?'},
+      {keywords:['cough'],'suggest':'Is the cough dry or productive (with phlegm)? Any blood in sputum?'},
+      {keywords:['shortness','breath','breathing'],'suggest':'Do you experience it at rest or with exertion? Any chest pain?' } ,
+      {keywords:['diarrhea','vomit','nausea'],'suggest':'Any blood in stools? Frequency? Any recent travel or food changes?'},
+      {keywords:['headache','migraine'],'suggest':'Onset, location, severity, and any vision changes?'},
+      {keywords:['rash','itch'],'suggest':'Where is the rash? Any blisters or spreading?'}
+    ];
+    function getSuggestions(text){ const t=text.toLowerCase(); const out=[]; suggestionMap.forEach(s=>{ s.keywords.forEach(k=>{ if(t.includes(k) && !out.includes(s.suggest)) out.push(s.suggest); }); }); return out; }
+
+    /* =========================
+       Rendering
+       ========================= */
+    function renderDoctors(){
+      const el = document.getElementById('doctorsList'); el.innerHTML = '';
+      DOCTORS.forEach(d=>{
+        const node = document.createElement('div');
+        node.className='doctor-card fade-in';
+        node.innerHTML = `
+          <div class="doc-avatar" aria-hidden="true">${escapeHtml(d.avatar)}</div>
+          <div style="flex:1">
+            <div style="font-size:16px;font-weight:800">${escapeHtml(d.name)}</div>
+            <div class="muted small">${escapeHtml(d.role)} • ${escapeHtml(d.exp+' yrs')}</div>
+            <div style="margin-top:6px">
+              <span class="badge">${d.available ? 'Available Today' : 'Next available: 2d'}</span>
+              ${d.available ? '<span style="margin-left:8px"><span class="dot-online" aria-hidden="true"></span><span class="small">Online</span></span>' : ''}
+            </div>
+            <div style="margin-top:8px" class="small muted-2">Rating: ${d.rating} ★</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+            <button class="btn btn-primary" onclick="openDoctorModal('${d.id}')">View</button>
+            <button class="btn btn-ghost" onclick="openBooking('${d.id}')">Book</button>
+          </div>
+        `;
+        el.appendChild(node);
+      });
+    }
+
+    function renderTeam(){ const el = document.getElementById('teamGrid'); el.innerHTML=''; TEAM.forEach(t=>{ const card=document.createElement('div'); card.className='profile fade-in card'; card.style.padding='12px'; card.innerHTML = `<div style="font-size:16px;font-weight:800">${escapeHtml(t.name)}</div><div class="muted">${escapeHtml(t.role)}</div>`; el.appendChild(card); }); }
+
+    renderDoctors(); renderTeam();
+
+    /* =========================
+       Quick predictions (simulated AI)
+       ========================= */
+    function predictConditions(text){
+      // Very conservative, rule-based predictions (no external AI)
+      const t = (text||'').toLowerCase();
+      const preds = [];
+      if(!t) return preds;
+      if(t.includes('fever') && t.includes('cough')) preds.push({label:'Respiratory infection', confidence:0.6});
+      if(t.includes('fever') && t.includes('rash')) preds.push({label:'Viral exanthem', confidence:0.55});
+      if(t.includes('chest') || t.includes('tight') || t.includes('chest pain')) preds.push({label:'Cardiac or respiratory — escalate', confidence:0.75});
+      if(t.includes('stomach') || t.includes('abdomen') || t.includes('vomit')) preds.push({label:'Gastroenteritis', confidence:0.5});
+      if(t.includes('headache') || t.includes('migraine')) preds.push({label:'Primary headache', confidence:0.45});
+      if(t.includes('rash') || t.includes('itch')) preds.push({label:'Dermatologic issue', confidence:0.5});
+      if(t.includes('shortness') || t.includes('breath')) preds.push({label:'Dyspnea — consider urgent review', confidence:0.7});
+      // Keep top 3
+      return preds.slice(0,3);
+    }
+
+    function renderQuickPredictions(text){
+      const container = document.getElementById('quickPredictions');
+      container.innerHTML = '';
+      const preds = predictConditions(text);
+      if(!preds.length){
+        container.innerHTML = `<div class="feature" style="min-width:180px">No quick predictions. Try adding more details.</div>`;
+        return;
+      }
+      preds.forEach(p=>{
+        const el = document.createElement('div');
+        el.className='feature';
+        el.style.minWidth='180px';
+        el.innerHTML = `<div style="font-weight:800">${escapeHtml(p.label)}</div><div class="small muted" style="margin-top:6px">Confidence: ${(p.confidence*100).toFixed(0)}%</div>`;
+        container.appendChild(el);
+      });
+    }
+
+    /* =========================
+       Quick check flow
+       ========================= */
+    async function quickCheck(){
+      const text=(document.getElementById('quickInput').value||'').trim();
+      const out=document.getElementById('quickResult'); const sug=document.getElementById('suggestions');
+      out.textContent=''; sug.textContent='';
+      if(!text){ out.textContent='Please enter some symptoms.'; return; }
+      if(containsRedFlag(text)){ out.innerHTML='⚠️ <strong>Red-flag detected.</strong> Call emergency services immediately or click "Call Now".'; showEmergencyModal('Red-flag symptom detected: please call emergency services now.'); return; }
+      const suggestions = getSuggestions(text);
+      if(suggestions.length){ sug.innerHTML = '<strong>Try answering:</strong> <ul style="margin-top:6px">' + suggestions.map(s=>`<li>${escapeHtml(s)}</li>`).join('') + '</ul>'; }
+      document.getElementById('symptomsText').value = text;
+      out.textContent='No immediate red-flag detected. Prefilled Symptom Checker.';
+      renderQuickPredictions(text);
+      document.querySelector('#symptoms').scrollIntoView({behavior:'smooth'});
+
+      // record quick-check analytics locally
+      recordCheck({ text, timestamp: new Date().toISOString(), source:'quick' });
+
+      // try to call backend suggestions (best-effort)
+      try{
+        const res = await fetch('/api/suggest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+        if(res.ok){ const data = await res.json(); if(data.suggestions) sug.innerHTML += '<div style="margin-top:8px" class="muted"><strong>AI suggestions:</strong><div>'+escapeHtml((data.suggestions||[]).join(' • '))+'</div></div>'; }
+      }catch(e){ /* offline fallback — we used rule-based suggestions already */ }
+    }
+
+    // Voice support
+    function startVoiceQuick(){ startVoice({targetId:'quickInput', autoAnalyze:true}); }
+    function startVoice(opts = { targetId: 'symptomsText', autoAnalyze:false }) {
+      const targetId = opts.targetId || 'symptomsText';
+      const autoAnalyze = !!opts.autoAnalyze;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) { alert("Your browser doesn't support speech recognition. Try Chrome on desktop or Android."); return; }
+      const recog = new SpeechRecognition();
+      recog.lang = "en-IN"; recog.interimResults = false; recog.maxAlternatives = 1;
+      const targetInput = document.getElementById(targetId);
+      const origPlaceholder = targetInput ? targetInput.placeholder : '';
+      if(targetInput) { targetInput.placeholder = 'Listening... speak now'; targetInput.focus(); }
+      recog.start();
+      recog.onresult = function(e) {
+        const text = e.results[0][0].transcript;
+        if(targetInput) targetInput.value = text;
+        if(autoAnalyze && targetId === 'quickInput') quickCheck();
+        if(autoAnalyze && targetId === 'symptomsText') { document.getElementById('quickResult').textContent = 'Captured voice input. Continue the checker.'; }
+      };
+      recog.onerror = function(ev) { console.warn('Speech error', ev); alert("Voice recognition error. Try again or use text input."); };
+      recog.onend = function(){ if(targetInput) targetInput.placeholder = origPlaceholder; };
+    }
+
+    /* =========================
+       Body map & hotspots
+       ========================= */
+    let currentGender = 'male';
+    function showGender(g){
+      currentGender = g;
+      const bodyImg = document.getElementById('bodyImg');
+      if(g === 'male') bodyImg.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(defaultMaleSVG());
+      else bodyImg.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(defaultFemaleSVG());
+      // re-inject hotspots
+      injectHotspots();
+    }
+
+    function bodySelect(text) {
+      document.getElementById('symptomsText').value = text;
+      const sug = document.getElementById('suggestions');
+      sug.innerHTML = '<strong>Selected:</strong> ' + escapeHtml(text) + '<div class="small" style="margin-top:6px">Tap Next to continue or press Chat to discuss.</div>';
+      document.querySelector('#symptoms').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Inline simple SVG bodies (avoid external assets). Minimalist silhouettes.
+    function defaultMaleSVG(){
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="720" viewBox="0 0 360 720"><rect width="100%" height="100%" fill="rgba(0,0,0,0)"/><g fill="#0b2433"><rect x="140" y="40" width="80" height="80" rx="18" fill="#cfefff"/><rect x="120" y="120" width="120" height="220" rx="30" fill="#eaf6ff"/><rect x="90" y="350" width="180" height="300" rx="50" fill="#dff4ff"/></g></svg>`;
+    }
+    function defaultFemaleSVG(){
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="720" viewBox="0 0 360 720"><rect width="100%" height="100%" fill="rgba(0,0,0,0)"/><g fill="#0b2433"><circle cx="180" cy="80" r="38" fill="#cfefff"/><rect x="125" y="120" width="110" height="220" rx="40" fill="#eaf6ff"/><rect x="95" y="350" width="170" height="300" rx="48" fill="#dff4ff"/></g></svg>`;
+    }
+
+    // Inject hotspots (keeps simple coordinates)
+    function injectHotspots(){
+      const bodyImg = document.getElementById('bodyImg');
+      if(!bodyImg) return;
+      const container = bodyImg.parentElement;
+      // remove existing hotspots
+      Array.from(container.querySelectorAll('.hotspot')).forEach(h=>h.remove());
+      const hotspotData = [
+        {x:'52%', y:'14%', label:'Head', value:'Headache / Head pain'},
+        {x:'52%', y:'34%', label:'Chest', value:'Chest pain or tightness'},
+        {x:'50%', y:'50%', label:'Abdomen', value:'Abdominal pain'},
+        {x:'38%', y:'68%', label:'Left leg', value:'Left leg pain'},
+        {x:'64%', y:'68%', label:'Right leg', value:'Right leg pain'}
+      ];
+      hotspotData.forEach(h=>{
+        const el = document.createElement('button');
+        el.className='hotspot pulse';
+        el.style.left = h.x;
+        el.style.top = h.y;
+        el.setAttribute('aria-label', h.label);
+        el.title = h.label;
+        el.textContent = ''; // small dot
+        el.addEventListener('click', ()=>{ el.classList.add('clicked'); setTimeout(()=>el.classList.remove('clicked'),500); bodySelect(h.value); });
+        container.appendChild(el);
+      });
+    }
+
+    // initialize body (default male)
+    showGender('male');
+
+    /* =========================
+       Wizard steps & triage
+       ========================= */
+    let currentStep = 1;
+    function showStep(step){
+      currentStep=step;
+      document.querySelectorAll('.step').forEach(s=>s.classList.toggle('active-step', Number(s.dataset.step)===step));
+      document.querySelectorAll('.step-panel').forEach(p=>p.style.display='none');
+      const panel=document.querySelector('.step-panel[data-panel="'+step+'"]'); if(panel) panel.style.display='block';
+      const focusable = panel && panel.querySelector('input,select,textarea,button'); if(focusable) focusable.focus();
+    }
+    function nextStep(){ showStep(Math.min(currentStep+1,4)); }
+    function prevStep(){ showStep(Math.max(currentStep-1,1)); }
+    showStep(1);
+    document.querySelectorAll('.step').forEach(s=>{ s.addEventListener('click', ()=>{ showStep(Number(s.dataset.step)); }); s.addEventListener('keydown', (e)=>{ if(e.keyCode===ENTER_KEY) showStep(Number(s.dataset.step)); }); });
+
+    function updateSeverityPreview(){
+      const sev=document.getElementById('severity').value;
+      const el=document.getElementById('severityPreview');
+      el.className='sev-badge';
+      if(sev==='mild'){ el.classList.add('sev-mild'); el.textContent='Mild'; }
+      else if(sev==='moderate'){ el.classList.add('sev-moderate'); el.textContent='Moderate'; }
+      else { el.classList.add('sev-severe'); el.textContent='Severe'; }
+    }
+    updateSeverityPreview();
+
+    let triageInProgress=false;
+    async function runTriage(){
+      if(triageInProgress) return;
+      triageInProgress=true;
+      const btn = document.getElementById('getRec');
+      if(btn){ btn.disabled=true; btn.innerHTML='Working ⏳'; }
+      const text = (document.getElementById('symptomsText').value||'').trim();
+      const duration = document.getElementById('duration').value;
+      const severity = document.getElementById('severity').value;
+      const age = (document.getElementById('age').value||'').trim();
+      const review=document.getElementById('reviewBox');
+      review.innerHTML=`<div class="muted small">Symptoms:</div><div style="margin-top:6px">${escapeHtml(text||'<none provided>')}</div><div class="muted small" style="margin-top:8px">Duration: ${escapeHtml(duration)}</div><div class="muted small">Severity: ${escapeHtml(severity)}</div>`;
+
+      if(containsRedFlag(text)){ triageInProgress=false; if(btn){ btn.disabled=false; btn.innerHTML='Get Recommendation'; } showEmergencyModal('Red-flag symptom detected during review. Please call emergency services immediately.'); return; }
+
+      try{
+        // Attempt to call backend triage (best-effort). If offline, fallback to client-mock.
+        const payload = { text, age: age || null, extra:{ duration, severity } };
+        const res = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        if(!res.ok) throw new Error('no-backend');
+        const data = await res.json();
+        presentTriageResult(data);
+        recordCheck({ text, timestamp: new Date().toISOString(), triage: data.triage || 'UNKNOWN', severity, source:'api' });
+      }catch(err){
+        // Fallback client-side conservative triage
+        let actions;
+        if(severity==='severe') actions=['Seek urgent care', 'Call emergency if worsens'];
+        else if(severity==='moderate') actions=['Book a GP visit', 'Monitor symptoms', 'Use analgesics / hydration if appropriate'];
+        else actions=['Self-care measures', 'Rest and hydrate'];
+        const mock = { triage: (severity==='severe') ? 'URGENT' : (severity==='moderate' ? 'SEE_GP' : 'SELF_CARE'), reason: 'Client-side conservative recommendation (fallback).', actions, confidence:0.6, source:'client-mock', timestamp:isoNow() };
+        presentTriageResult(mock);
+        recordCheck({ text, timestamp: new Date().toISOString(), triage: mock.triage, severity, source:'fallback' });
+      } finally { triageInProgress=false; if(btn){ btn.disabled=false; btn.innerHTML='Get Recommendation'; } }
+    }
+
+    function presentTriageResult(res){
+      const box=document.createElement('div'); box.className='card';
+      let html=`<h4>Recommendation: ${escapeHtml(res.triage||'UNABLE_TO_DETERMINE')}</h4>`;
+      html+=`<div class="muted small" style="margin-top:6px">${escapeHtml(res.reason||'')}</div>`;
+      if(res.actions && res.actions.length){ html+='<ul style="margin-top:8px">'; res.actions.forEach(a=> html+=`<li>${escapeHtml(a)}</li>`); html+='</ul>'; }
+      html+=`<div style="margin-top:10px;display:flex;gap:8px"><button class="btn btn-primary" onclick="openChat()">Discuss with assistant</button><button class="btn btn-ghost" onclick="openBooking()">Request clinician review</button><button class="btn btn-ghost" onclick="downloadTriagePDF()">Download PDF</button></div>`;
+      html+=`<div class="timestamp" style="margin-top:8px">${escapeHtml(res.timestamp||new Date().toLocaleString())}</div>`;
+      const reviewSlot=document.querySelector('.step-panel[data-panel="4"] #reviewBox');
+      if(reviewSlot){ reviewSlot.innerHTML=''; reviewSlot.appendChild(box); box.innerHTML=html; box.scrollIntoView({behavior:'smooth'}); }
+      // update mini-analytics
+      updateAnalyticsDisplay(res);
+    }
+
+    /* =========================
+       Booking / appointments (with time slots) + PDF receipts
+       ========================= */
+    function openDoctorModal(docId){
+      const d = DOCTORS.find(x=>x.id===docId);
+      if(!d) return;
+      const modalRoot = document.getElementById('modalRoot'); modalRoot.style.display='block';
+      modalRoot.innerHTML = `
+        <div class="modal-backdrop" onclick="closeModal(event)">
+          <div class="modal" role="dialog" aria-modal="true" aria-label="Doctor profile" onclick="event.stopPropagation()">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-weight:900;font-size:18px">${escapeHtml(d.name)}</div>
+                <div class="small muted-2">${escapeHtml(d.role)} • ${escapeHtml(d.exp+' yrs')}</div>
+                <div class="small" style="margin-top:6px">Rating: ${d.rating} ★</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+                <div class="doc-avatar" style="width:56px;height:56px">${escapeHtml(d.avatar)}</div>
+                <div><button class="btn btn-primary" onclick="openBooking('${d.id}')">Book</button></div>
+              </div>
+            </div>
+
+            <div style="margin-top:12px" class="muted small">
+              ${escapeHtml(d.bio)}
+            </div>
+
+            <div style="margin-top:12px">
+              <div style="font-weight:800">Available times</div>
+              <div class="small muted" style="margin-top:6px">${d.slots.join(' • ')}</div>
+            </div>
+
+            <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:8px">
+              <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.addEventListener('keydown', escCloseModal);
+    }
+
+    function openBooking(doctorId='general'){
+      // doctorId may be name or id
+      const doc = DOCTORS.find(x=>x.id===doctorId) || {id:'general', name: doctorId==='general' ? 'General clinician' : doctorId, slots:['09:00','10:00','14:00']};
+      const modalRoot=document.getElementById('modalRoot'); modalRoot.style.display='block';
+      modalRoot.innerHTML=`
+        <div class="modal-backdrop" onclick="closeModal(event)">
+          <div class="modal" role="dialog" aria-modal="true" aria-label="Appointment request" onclick="event.stopPropagation()">
+            <h3>Request Appointment</h3>
+            <div style="margin-top:8px" class="muted">Doctor: ${escapeHtml(doc.name)}</div>
+            <div style="margin-top:12px">
+              <label class="muted small">Your name</label>
+              <input id="bookName" type="text" placeholder="Full name" />
+            </div>
+            <div style="margin-top:8px">
+              <label class="muted small">Phone or email</label>
+              <input id="bookContact" type="text" placeholder="Phone / Email" />
+            </div>
+            <div style="margin-top:8px">
+              <label class="muted small">Choose a time slot</label>
+              <div id="slotContainer" style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap"></div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+              <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+              <button class="btn btn-primary" id="submitBookingBtn">Request</button>
+            </div>
+          </div>
+        </div>
+      `;
+      const slotContainer = modalRoot.querySelector('#slotContainer');
+      doc.slots.forEach(s=>{
+        const b = document.createElement('button'); b.className='btn btn-ghost'; b.textContent = s; b.onclick = ()=>{ // mark selected
+          slotContainer.querySelectorAll('button').forEach(x=>x.classList.remove('selected-slot'));
+          b.classList.add('selected-slot');
+        };
+        slotContainer.appendChild(b);
+      });
+      document.getElementById('submitBookingBtn').addEventListener('click', ()=> submitBooking(doc));
+      document.addEventListener('keydown', escCloseModal);
+    }
+
+    function escCloseModal(e){ if(e.keyCode===ESC_KEY) closeModal(); }
+    function closeModal(e){ document.getElementById('modalRoot').style.display='none'; document.getElementById('modalRoot').innerHTML=''; document.removeEventListener('keydown', escCloseModal); }
+
+    function submitBooking(doc){
+      const name=(document.getElementById('bookName')?.value||'').trim();
+      const contact=(document.getElementById('bookContact')?.value||'').trim();
+      const slot = Array.from(document.querySelectorAll('#slotContainer button.selected-slot'))[0]?.textContent || '';
+      if(!name||!contact){ alert('Please provide your name and contact.'); return; }
+      const appt = { id: Date.now(), doctor: doc.name, doctorId: doc.id||'general', name, contact, time: slot || 'Not specified', created: new Date().toLocaleString() };
+      const arr = JSON.parse(localStorage.getItem(APPT_KEY)||'[]');
+      arr.unshift(appt);
+      localStorage.setItem(APPT_KEY, JSON.stringify(arr));
+      closeModal();
+      showAppointmentList();
+      showBookingReceipt(appt);
+      // attempt to POST to backend (best-effort)
+      try{ fetch('/api/appointments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(appt)}); }catch(e){}
+    }
+
+    function showAppointmentList(){ const container=document.getElementById('appointmentListContainer'); const arr=JSON.parse(localStorage.getItem(APPT_KEY)||'[]'); if(!arr.length){ container.innerHTML = '<div class="muted" style="margin-top:10px">No appointment requests yet.</div>'; return; } let html='<div style="margin-top:12px"><h4>Your Requests</h4><ul>'; arr.forEach(a=>{ html += `<li>${escapeHtml(a.doctor)} — ${escapeHtml(a.name)} (${escapeHtml(a.contact)}) ${a.time?`<span class="muted">[${escapeHtml(a.time)}]</span>`:''} <span class="muted">[${escapeHtml(a.created)}]</span></li>`; }); html += '</ul></div>'; container.innerHTML = html; }
+    showAppointmentList();
+
+    function showBookingReceipt(appt) {
+      const modalRoot = document.getElementById('modalRoot');
+      modalRoot.style.display = 'block';
+
+      modalRoot.innerHTML = `
+        <div class="modal-backdrop" onclick="closeModal(event)">
+          <div class="modal" onclick="event.stopPropagation()">
+            <h3>✔ Appointment Confirmed</h3>
+            <div style="margin-top:12px" class="muted small">
+              Your appointment request has been successfully submitted.
+            </div>
+
+            <div class="card" style="margin-top:12px;padding:14px;font-size:14px">
+              <strong>Receipt</strong><br><br>
+              <div><b>Booking ID:</b> ${appt.id}</div>
+              <div><b>Patient:</b> ${escapeHtml(appt.name)}</div>
+              <div><b>Contact:</b> ${escapeHtml(appt.contact)}</div>
+              <div><b>Doctor:</b> ${escapeHtml(appt.doctor)}</div>
+              <div><b>Preferred Time:</b> ${escapeHtml(appt.time || 'Not provided')}</div>
+              <div><b>Date:</b> ${escapeHtml(appt.created)}</div>
+            </div>
+
+            <div style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px">
+              <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+              <button class="btn btn-primary" onclick="downloadReceipt(${appt.id})">Download PDF</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function downloadReceipt(id) {
+      const arr = JSON.parse(localStorage.getItem(APPT_KEY) || "[]");
+      const appt = arr.find(a => a.id === id);
+      if (!appt) return alert("Receipt not found");
+      // use jsPDF
+      try{
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFontSize(14);
+        doc.text('Appointment Receipt', 14, 18);
+        doc.setFontSize(11);
+        doc.text(`Booking ID: ${appt.id}`, 14, 32);
+        doc.text(`Patient: ${appt.name}`, 14, 40);
+        doc.text(`Contact: ${appt.contact}`, 14, 48);
+        doc.text(`Doctor: ${appt.doctor}`, 14, 56);
+        doc.text(`Preferred Time: ${appt.time || 'Not provided'}`, 14, 64);
+        doc.text(`Created: ${appt.created}`, 14, 72);
+        doc.save(`appointment_${appt.id}.pdf`);
+      }catch(e){
+        // fallback to txt file
+        const text = `Appointment Receipt\n-------------------------\nBooking ID: ${appt.id}\nPatient: ${appt.name}\nContact: ${appt.contact}\nDoctor: ${appt.doctor}\nPreferred Time: ${appt.time || "Not provided"}\nCreated: ${appt.created}\n-------------------------\nThank you for using AI Medical Hub!\n`;
+        const blob = new Blob([text], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "appointment_receipt.txt";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    /* =========================
+       Download triage summary PDF (client-side)
+       ========================= */
+    function downloadTriagePDF(){
+      // collect last triage info from reviewBox
+      const reviewSlot = document.querySelector('.step-panel[data-panel="4"] #reviewBox');
+      if(!reviewSlot || !reviewSlot.textContent.trim()) return alert('No triage available to download.');
+      try{
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFontSize(14);
+        doc.text('Triage Summary', 14, 18);
+        doc.setFontSize(11);
+        const lines = reviewSlot.innerText.split('\n').slice(0,40);
+        let y = 32;
+        lines.forEach(l=>{ doc.text(l, 14, y); y+=8; });
+        doc.save(`triage_${Date.now()}.pdf`);
+      }catch(e){
+        alert('PDF generation failed in this browser.');
+      }
+    }
+
+    /* =========================
+       Chatbot (client-only simulation)
+       ========================= */
+    let chatOpen=false; let chatOnline=false; const chatStatus=document.getElementById('chatStatus');
+    function toggleChat(){ chatOpen?closeChat():openChat(); }
+    function openChat(){ document.getElementById('chatWindow').style.display='flex'; chatOpen=true; chatStatus.textContent=(chatOnline?'ready':'offline'); document.getElementById('chatInput').focus(); }
+    function closeChat(){ document.getElementById('chatWindow').style.display='none'; chatOpen=false; chatStatus.textContent='offline'; }
+
+    (async function checkApi(){ try{ const r=await fetch('/api/ping',{method:'GET'}); if(r.ok){ chatOnline=true; chatStatus.textContent='ready'; } }catch(e){ chatOnline=false; chatStatus.textContent='offline'; } })();
+
+    // ====== Helper: remove the last temporary "Analyzing..." message ======
+    function removeLastAnalyzing(){
+      const logs = document.getElementById('chatLogs');
+      if(!logs) return;
+      const msgs = Array.from(logs.querySelectorAll('.msg.bot'));
+      for(let i=msgs.length-1;i>=0;i--){
+        const m = msgs[i];
+        if(m && m.innerText && m.innerText.toLowerCase().includes('analyzing')){
+          const ts = m.nextSibling;
+          if(ts && ts.classList && ts.classList.contains('timestamp')) ts.remove();
+          m.remove();
+          break;
+        }
+      }
+    }
+
+  async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = (input.value || '').trim();
+  if (!text) return;
+
+  appendChat('user', text);
+  input.value = '';
+
+  // Show temporary "Analyzing..."
+  appendChat('bot', 'Analyzing...');
+
+  // Emergency detection
+  if (containsRedFlag(text)) {
+    removeLastAnalyzing();
+    appendChat(
+      'bot',
+      '⚠️ Emergency red-flag detected. Please call emergency services immediately.'
+    );
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+    removeLastAnalyzing();
+
+    // Build output
+    let msg = '';
+
+    // Possible disease from backend
+    if (data.disease) {
+      msg += `🩺 <b>Possible Disease:</b> ${data.disease}<br><br>`;
+    }
+
+    // Main answer text
+    if (data.answer) {
+      msg += `${data.answer}<br><br>`;
+    }
+
+    // Medicines (array)
+    if (Array.isArray(data.medicine) && data.medicine.length) {
+      msg += `<b>Recommended Medicines:</b><ul>`;
+      data.medicine.forEach(m => {
+        msg += `<li>${m}</li>`;
+      });
+      msg += `</ul><br>`;
+    }
+
+    // Doctor Recommendation
+    if (data.doctor) {
+      msg += `<b>Recommended Specialist:</b> ${data.doctor}<br><br>`;
+    }
+
+    // Triage Information
+    msg += `<b>Triage:</b> ${data.triage || 'GENERAL_ADVICE'}<br>`;
+    if (data.reason) msg += `<span class="small">${data.reason}</span><br><br>`;
+
+    if (Array.isArray(data.actions) && data.actions.length) {
+      msg += `<b>Actions:</b><ul>`;
+      data.actions.forEach(a => {
+        msg += `<li>${a}</li>`;
+      });
+      msg += `</ul>`;
+    }
+
+    appendChat('bot', msg);
+
+  } catch (err) {
+    removeLastAnalyzing();
+    appendChat('bot', 'AI backend offline. Please try again later.');
+  }
+}
+
+
+   function appendChat(who, text) {
+  const logs = document.getElementById("chatLogs");
+  const d = document.createElement("div");
+  d.className = "msg " + (who === "bot" ? "bot" : "user");
+
+  if (who === "bot") {
+    d.innerHTML = text;   // ✅ Render HTML content from backend
+  } else {
+    d.textContent = text; // User messages remain plain text
+  }
+
+  logs.appendChild(d);
+
+  const ts = document.createElement("div");
+  ts.className = "timestamp";
+  ts.textContent = isoNow();
+  logs.appendChild(ts);
+
+  logs.scrollTop = logs.scrollHeight;
+}
+    /* =========================
+       Theme toggle
+       ========================= */
+    const themeToggle=document.getElementById('themeToggle'); let light=false;
+    themeToggle.addEventListener('click', ()=>{
+      light=!light;
+      if(light){
+        document.body.style.background='linear-gradient(180deg,#f6fbff,#eef6ff)';
+        document.body.style.color='#0b2233';
+        document.querySelectorAll('.card').forEach(c=> c.style.boxShadow='0 8px 30px rgba(10,30,40,0.06)');
+      } else {
+        document.body.style.background='radial-gradient(1200px 600px at 10% 10%, rgba(45,169,255,0.05), transparent), linear-gradient(180deg,var(--bg-dark), #021018)';
+        document.body.style.color='';
+        document.querySelectorAll('.card').forEach(c=> c.style.boxShadow='var(--shadow-dark)');
+      }
+    });
+
+    /* =========================
+       Admin (quick gadget)
+       ========================= */
+    function toggleAdmin(){ const panel=document.getElementById('adminPanel'); panel.style.display = (panel.style.display==='block')?'none':'block'; }
+    let seq=''; document.addEventListener('keydown', (e)=>{ seq+=e.key.toLowerCase(); if(seq.endsWith('adm')){ toggleAdmin(); loadAdmin(); seq=''; } if(seq.length>10) seq=seq.slice(-4); });
+    function loadAdmin(){ const panel=document.getElementById('adminPanel'); const content=document.getElementById('adminContent'); const arr=JSON.parse(localStorage.getItem(APPT_KEY)||'[]'); content.innerHTML=`<div><strong>Appointments:</strong> ${arr.length}</div><div style="margin-top:8px"><strong>Doctors:</strong> ${DOCTORS.length}</div><div style="margin-top:8px"><button class='btn btn-primary' onclick='exportAppointments()'>Export requests (JSON)</button></div>`; }
+    function exportAppointments(){ const arr=JSON.parse(localStorage.getItem(APPT_KEY)||'[]'); const blob=new Blob([JSON.stringify(arr, null, 2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='appointments.json'; a.click(); URL.revokeObjectURL(url); }
+
+    /* =========================
+       Utilities: analytics & storage
+       ========================= */
+    function recordCheck(entry){
+      const arr = JSON.parse(localStorage.getItem(CHECKS_KEY)||'[]');
+      arr.unshift(entry);
+      localStorage.setItem(CHECKS_KEY, JSON.stringify(arr.slice(0,200)));
+      updateAnalytics();
+    }
+
+    function updateAnalytics(){
+      const arr = JSON.parse(localStorage.getItem(CHECKS_KEY)||'[]');
+      document.getElementById('statChecks').textContent = arr.length;
+      if(arr.length){
+        const last = arr[0];
+        document.getElementById('statTriage').textContent = last.triage || '—';
+        document.getElementById('statSymptom').textContent = (last.text||'—').slice(0,55);
+      } else {
+        document.getElementById('statTriage').textContent = '—';
+        document.getElementById('statSymptom').textContent = '—';
+      }
+    }
+    function updateAnalyticsDisplay(result){
+      // update UI after triage (result)
+      const arr = JSON.parse(localStorage.getItem(CHECKS_KEY)||'[]');
+      document.getElementById('statChecks').textContent = arr.length;
+      document.getElementById('statTriage').textContent = result.triage || '—';
+      // set last symptom text if exists
+      const lastCheck = arr[0];
+      if(lastCheck) document.getElementById('statSymptom').textContent = (lastCheck.text||'—').slice(0,55);
+    }
+    updateAnalytics();
+
+    /* =========================
+       Emergency flow
+       ========================= */
+    function showEmergencyModal(message){ const modalRoot=document.getElementById('modalRoot'); modalRoot.style.display='block'; modalRoot.innerHTML=`
+      <div class="modal-backdrop" onclick="closeModal(event)">
+        <div class="modal" role="alertdialog" aria-modal="true" aria-label="Emergency" onclick="event.stopPropagation()">
+          <div class="danger-banner">EMERGENCY — ACT NOW</div>
+          <div style="margin-top:12px">${escapeHtml(message)}</div>
+          <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn btn-ghost" onclick="closeModal()">Dismiss</button>
+            <button class="btn" style="background:var(--danger);color:#02111b" onclick="callNow()">Call Emergency</button>
+          </div>
+        </div>
+      </div>
+    `; document.addEventListener('keydown', escCloseModal); }
+    function callNow(){ const number=document.getElementById('emNumber').textContent||'+1555911'; window.location.href='tel:' + number.replace(/\s+/g,''); }
+
+    /* =========================
+       Misc helpers & exposure
+       ========================= */
+    window.openBooking=openBooking; window.openChat=openChat; window.toggleChat=toggleChat; window.openModal=openBooking; window.quickCheck=quickCheck; window.openBooking=openBooking; window.callNow=callNow; window.showEmergencyModal=showEmergencyModal; window.nextStep=nextStep; window.prevStep=prevStep; window.runTriage=runTriage; window.toggleAdmin=toggleAdmin; window.exportAppointments=exportAppointments; window.startVoice = startVoice; window.bodySelect = bodySelect; window.startVoiceQuick = startVoiceQuick; window.openDoctorModal = openDoctorModal; window.downloadReceipt = downloadReceipt; window.downloadTriagePDF = downloadTriagePDF;
+
+    // Accessibility: ESC close global
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ const root=document.getElementById('modalRoot'); if(root && root.style.display==='block') closeModal(); else if(chatOpen) closeChat(); } });
+
+    // small UX: auto-suggestions while typing in chat
+    document.getElementById('chatInput').addEventListener('input', function(){
+      const t=this.value;
+      const s=getSuggestions(t);
+      const hints = s.length ? `Try: ${s.slice(0,2).join(' • ')}` : 'Try: "I have fever and cough"';
+      document.getElementById('chatHints').textContent = hints;
+    });
+
+    // small improvement: update quickPredictions when typing
+    document.getElementById('quickInput').addEventListener('input', function(){ renderQuickPredictions(this.value); });
+
+    // init predictions placeholder
+    renderQuickPredictions('');
+
+    // enter-to-send for chat input
+    document.getElementById('chatInput').addEventListener('keydown', function(e){ if(e.key==='Enter') sendChat(); });
+
+  </script src="script.js"></script>
+</body>
+</html>

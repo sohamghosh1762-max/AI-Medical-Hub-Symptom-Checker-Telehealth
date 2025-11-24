@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appointment Management — AI Medical Hub</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+  body{
+    margin:0;
+    font-family:'Poppins',sans-serif;
+    background:#020710;
+    color:white;
+    display:flex;
+    height:100vh;
+    overflow:hidden;
+  }
+
+  /* SIDEBAR */
+  .sidebar{
+    width:260px;
+    background:#081222;
+    padding:22px;
+    box-shadow:2px 0 25px rgba(0,0,0,0.5);
+  }
+  .logo-box img{width:75px}
+
+  .menu-item{
+    display:block;
+    padding:12px 15px;
+    margin-bottom:10px;
+    border-radius:10px;
+    cursor:pointer;
+    color:white;
+    text-decoration:none;
+    transition:0.2s;
+  }
+  .menu-item:hover{background:rgba(255,255,255,0.15)}
+  .menu-item.active{background:#2da9ff;color:black;font-weight:700}
+
+  .btn-red{
+    padding:12px;
+    background:#ff4c4c;
+    border-radius:10px;
+    cursor:pointer;
+    text-align:center;
+    margin-top:20px;
+  }
+
+  /* MAIN */
+  .main{
+    flex:1;
+    padding:28px;
+    overflow-y:auto;
+  }
+
+  .btn{
+    padding:10px 14px;
+    background:#2da9ff;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:700;
+    color:black;
+    margin-right:5px;
+  }
+
+  .card{
+    background:rgba(255,255,255,0.06);
+    padding:22px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,0.12);
+    backdrop-filter:blur(10px);
+    margin-top:25px;
+    animation:fadeUp 0.4s;
+  }
+
+  input, select{
+    padding:10px;
+    border-radius:8px;
+    border:none;
+    background:#0e1c33;
+    color:white;
+    width:100%;
+    margin-bottom:12px;
+  }
+
+  .row{display:flex;gap:14px;}
+  .col{flex:1}
+
+  /* TABLE */
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+  }
+
+  th{
+    padding:14px;
+    text-align:left;
+    background:#0f1e36;
+    border-bottom:2px solid rgba(255,255,255,0.2);
+    letter-spacing:0.5px;
+  }
+
+  td{
+    padding:13px;
+    border-bottom:1px solid rgba(255,255,255,0.1);
+  }
+
+  tr:hover{
+    background:rgba(255,255,255,0.08);
+  }
+
+  /* BADGES */
+  .badge{
+    padding:6px 10px;
+    border-radius:6px;
+    font-size:12px;
+    font-weight:600;
+    color:black;
+  }
+  .upcoming{background:#2da9ff}
+  .completed{background:#4cff7a}
+  .cancelled{background:#ff4c4c}
+
+  /* MODAL */
+  #editBox{
+    background:rgba(0,0,0,0.55);
+    position:fixed;
+    top:0;left:0;
+    right:0;bottom:0;
+    display:none;
+    justify-content:center;
+    align-items:center;
+    backdrop-filter:blur(3px);
+  }
+
+  .modal{
+    background:#0d1a2b;
+    padding:25px;
+    border-radius:14px;
+    width:500px;
+    animation:zoomIn 0.25s ease;
+    border:1px solid rgba(255,255,255,0.12);
+  }
+
+  @keyframes fadeUp{
+    from{opacity:0;transform:translateY(10px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+
+  @keyframes zoomIn{
+    from{opacity:0;transform:scale(0.8)}
+    to{opacity:1;transform:scale(1)}
+  }
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+
+  <div class="logo-box" style="text-align:center;margin-bottom:25px;">
+    <img src="https://cdn-icons-png.flaticon.com/512/6009/6009864.png">
+    <h3>Admin Panel</h3>
+  </div>
+
+  <a href="{{ url_for('admin_dashboard') }}" class="menu-item">Dashboard</a>
+  <a href="{{ url_for('appointment_management') }}" class="menu-item active">Appointments</a>
+  <a href="{{ url_for('doctor_management') }}" class="menu-item">Doctors</a>
+  <a href="{{ url_for('admin_settings') }}" class="menu-item">Settings</a>
+
+  <div class="btn-red" onclick="logout()">Logout</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <h1>Appointment Management</h1>
+
+  <!-- FILTERS -->
+  <div class="card">
+    <h3>Filters</h3>
+    <div class="row">
+      <div class="col"><input type="text" id="searchBox" placeholder="Search by name / doctor / phone" oninput="applyFilters()"></div>
+      <div class="col"><input type="date" id="filterDate" onchange="applyFilters()"></div>
+      <div class="col">
+        <select id="statusFilter" onchange="applyFilters()">
+          <option value="">All Status</option>
+          <option value="Upcoming">Upcoming</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appointment List -->
+  <div class="card">
+    <h3>Appointment Records</h3>
+    <div id="appointmentTable"></div>
+  </div>
+
+</div>
+
+<!-- EDIT MODAL -->
+<div id="editBox">
+  <div class="modal">
+    <h3>Edit Appointment</h3>
+
+    <input type="hidden" id="editId">
+
+    <label>Patient Name</label>
+    <input id="editName">
+
+    <label>Contact</label>
+    <input id="editContact">
+
+    <label>Doctor</label>
+    <select id="editDoctor"></select>
+
+    <label>Date</label>
+    <input type="date" id="editDate">
+
+    <label>Time</label>
+    <input type="time" id="editTime">
+
+    <label>Status</label>
+    <select id="editStatus">
+      <option>Upcoming</option>
+      <option>Completed</option>
+      <option>Cancelled</option>
+    </select>
+
+    <br><br>
+
+    <button class="btn" onclick="saveEdit()">Save Changes</button>
+    <button class="btn-red" onclick="closeEdit()">Cancel</button>
+  </div>
+</div>
+
+
+<script>
+
+if (sessionStorage.getItem("admin_logged") !== "yes") {
+  window.location.href = "{{ url_for('admin_login') }}";
+}
+
+function loadAppointments(){
+  return JSON.parse(localStorage.getItem("ai_medical_appointments_v2") || "[]");
+}
+
+function loadDoctors(){
+  return JSON.parse(localStorage.getItem("ai_medical_doctors") || "[]");
+}
+
+function renderTable(data){
+  if(!data.length){
+    appointmentTable.innerHTML = "<p>No appointments found.</p>";
+    return;
+  }
+
+  let html = `
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Contact</th>
+      <th>Doctor</th>
+      <th>Date</th>
+      <th>Time</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>`;
+
+  data.forEach(a=>{
+    let statusColor =
+      a.status === "Completed" ? "completed" :
+      a.status === "Cancelled" ? "cancelled" : "upcoming";
+
+    html += `
+      <tr>
+        <td>${a.id}</td>
+        <td>${a.name}</td>
+        <td>${a.contact}</td>
+        <td>${a.doctor}</td>
+        <td>${a.date}</td>
+        <td>${a.time}</td>
+        <td><span class="badge ${statusColor}">${a.status}</span></td>
+        <td>
+          <button class="btn" onclick="editAppointment(${a.id})">Edit</button>
+          <button class="btn-red" onclick="deleteAppointment(${a.id})">Delete</button>
+        </td>
+      </tr>`;
+  });
+
+  html += "</table>";
+  appointmentTable.innerHTML = html;
+}
+
+function applyFilters(){
+  let list = loadAppointments();
+  let q = searchBox.value.toLowerCase();
+  let d = filterDate.value;
+  let s = statusFilter.value;
+
+  if(q){
+    list = list.filter(a =>
+      a.name.toLowerCase().includes(q) ||
+      a.contact.toLowerCase().includes(q) ||
+      a.doctor.toLowerCase().includes(q)
+    );
+  }
+
+  if(d){
+    list = list.filter(a => a.date === d);
+  }
+
+  if(s){
+    list = list.filter(a => a.status === s);
+  }
+
+  renderTable(list);
+}
+
+function deleteAppointment(id){
+  if(!confirm("Delete appointment?")) return;
+
+  let list = loadAppointments().filter(a => a.id !== id);
+  localStorage.setItem("ai_medical_appointments_v2", JSON.stringify(list));
+
+  applyFilters();
+}
+
+function editAppointment(id){
+  let a = loadAppointments().find(x => x.id === id);
+
+  editBox.style.display="flex";
+
+  editId.value = a.id;
+  editName.value = a.name;
+  editContact.value = a.contact;
+  editDoctor.value = a.doctor;
+  editDate.value = a.date;
+  editTime.value = a.time;
+  editStatus.value = a.status;
+}
+
+function saveEdit(){
+  let id = editId.value;
+  let list = loadAppointments();
+  let a = list.find(x => x.id == id);
+
+  a.name = editName.value;
+  a.contact = editContact.value;
+  a.doctor = editDoctor.value;
+  a.date = editDate.value;
+  a.time = editTime.value;
+  a.status = editStatus.value;
+
+  localStorage.setItem("ai_medical_appointments_v2", JSON.stringify(list));
+
+  editBox.style.display="none";
+  applyFilters();
+  alert("Appointment updated!");
+}
+
+function closeEdit(){
+  editBox.style.display="none";
+}
+
+function loadDoctorDropdown(){
+  let list = loadDoctors();
+  editDoctor.innerHTML = "";
+
+  list.forEach(d=>{
+    let opt = document.createElement("option");
+    opt.value = d.name;
+    opt.textContent = d.name;
+    editDoctor.appendChild(opt);
+  });
+}
+
+loadDoctorDropdown();
+renderTable(loadAppointments());
+applyFilters();
+
+function logout(){
+  sessionStorage.removeItem("admin_logged");
+  window.location.href = "{{ url_for('admin_login') }}";
+}
+
+</script>
+
+</body>
+</html>

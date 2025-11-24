@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Dashboard — AI Medical Hub</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+  body{
+    margin:0;
+    font-family:'Poppins',sans-serif;
+    background:#050b18;
+    color:white;
+    display:flex;
+    height:100vh;
+    overflow:hidden;
+  }
+
+  .sidebar{
+    width:250px;
+    background:#0a1628;
+    padding:20px;
+    box-shadow:2px 0 20px rgba(0,0,0,0.4);
+  }
+
+  .logo-box img{
+    width:80px;
+  }
+
+  .menu-item{
+    display:block;
+    padding:12px;
+    margin-bottom:10px;
+    border-radius:10px;
+    text-decoration:none;
+    color:inherit;
+    cursor:pointer;
+    transition:0.3s;
+  }
+  .menu-item:hover{
+    background:rgba(255,255,255,0.15);
+  }
+  .menu-item.active{
+    background:#2da9ff;
+    color:black;
+    font-weight:700;
+  }
+
+  .btn-red{
+    background:#ff4c4c;
+    color:white;
+  }
+
+  .main{
+    flex:1;
+    padding:25px;
+    overflow-y:auto;
+  }
+
+  .topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+
+  .btn{
+    padding:10px 16px;
+    background:#2da9ff;
+    border:none;
+    border-radius:8px;
+    font-weight:700;
+    color:black;
+    cursor:pointer;
+    margin-right:5px;
+  }
+  .btn:hover{
+    opacity:0.85;
+  }
+
+  .card{
+    background:rgba(255,255,255,0.07);
+    padding:20px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,0.1);
+    backdrop-filter:blur(8px);
+    margin-top:25px;
+  }
+
+  input, select{
+    padding:10px;
+    border-radius:8px;
+    border:none;
+    background:#0e1c33;
+    color:white;
+    width:100%;
+    margin-bottom:12px;
+  }
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+  }
+  th,td{
+    padding:12px;
+    border-bottom:1px solid rgba(255,255,255,0.1);
+  }
+  tr:hover{
+    background:rgba(255,255,255,0.1);
+  }
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+  <div class="logo-box" style="text-align:center;margin-bottom:20px;">
+    <img src="https://cdn-icons-png.flaticon.com/512/6009/6009864.png">
+    <h3>Admin Panel</h3>
+  </div>
+
+  <a href="{{ url_for('admin_dashboard') }}" 
+     class="menu-item {% if request.path == '/admin_dashboard' %}active{% endif %}">
+     Dashboard
+  </a>
+
+  <a href="{{ url_for('appointment_management') }}" 
+     class="menu-item {% if request.path == '/appointment_management' %}active{% endif %}">
+     Appointments
+  </a>
+
+  <a href="{{ url_for('doctor_management') }}" 
+     class="menu-item {% if request.path == '/doctor_management' %}active{% endif %}">
+     Doctors
+  </a>
+
+  <a href="{{ url_for('admin_settings') }}" 
+     class="menu-item {% if request.path == '/admin_settings' %}active{% endif %}">
+     Settings
+  </a>
+
+  <div class="menu-item btn-red" onclick="logout()">Logout</div>
+</div>
+
+<div class="main">
+
+  <div class="topbar">
+    <h1>Dashboard</h1>
+    <div>
+      <button class="btn" onclick="downloadExcel()">Download Excel</button>
+      <button class="btn btn-red" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Filters</h3>
+
+    <input type="text" id="searchBox" placeholder="Search..." oninput="applyFilters()">
+
+    <select id="filterDoctor" onchange="applyFilters()">
+      <option value="">All Doctors</option>
+    </select>
+
+    <input type="date" id="filterDate" onchange="applyFilters()">
+  </div>
+
+  <div class="card">
+    <h3>Appointment Records</h3>
+    <div id="tableContainer"></div>
+  </div>
+
+  <div class="card">
+    <h3>Bookings Per Doctor</h3>
+    <canvas id="chartDoctors" height="120"></canvas>
+  </div>
+
+  <div class="card">
+    <h3>Daily Trend (Last 7 Days)</h3>
+    <canvas id="chartTrend" height="120"></canvas>
+  </div>
+
+</div>
+
+<script>
+
+if (sessionStorage.getItem("admin_logged") !== "yes") {
+  window.location.href = "{{ url_for('admin_login') }}";
+}
+
+function loadAppointments(){
+  return JSON.parse(localStorage.getItem("ai_medical_appointments_v2") || "[]");
+}
+
+function renderTable(data){
+  if(!data.length){
+    tableContainer.innerHTML="<p>No records found.</p>";
+    return;
+  }
+
+  let html = `
+    <table>
+      <tr>
+        <th>ID</th>
+        <th>Patient</th>
+        <th>Contact</th>
+        <th>Doctor</th>
+        <th>Time</th>
+        <th>Date</th>
+      </tr>
+  `;
+
+  data.forEach(a=>{
+    html+=`
+      <tr>
+        <td>${a.id}</td>
+        <td>${a.name}</td>
+        <td>${a.contact}</td>
+        <td>${a.doctor}</td>
+        <td>${a.time || "-"}</td>
+        <td>${a.created}</td>
+      </tr>
+    `;
+  });
+
+  html+="</table>";
+  tableContainer.innerHTML=html;
+}
+
+function applyFilters(){
+  let list = loadAppointments();
+  let q = searchBox.value.toLowerCase();
+  let d = filterDate.value;
+  let doctor = filterDoctor.value;
+
+  if(q){
+    list = list.filter(a =>
+      a.name.toLowerCase().includes(q) ||
+      a.contact.toLowerCase().includes(q) ||
+      a.doctor.toLowerCase().includes(q)
+    );
+  }
+
+  if(doctor){
+    list = list.filter(a => a.doctor === doctor);
+  }
+
+  if(d){
+    list = list.filter(a =>
+      new Date(a.created).toISOString().slice(0,10) === d
+    );
+  }
+
+  renderTable(list);
+  updateCharts(list);
+}
+
+function loadDoctorFilter(){
+  let doctors = [...new Set(loadAppointments().map(a => a.doctor))];
+
+  doctors.forEach(d=>{
+    let opt = document.createElement("option");
+    opt.value = d;
+    opt.textContent = d;
+    filterDoctor.appendChild(opt);
+  });
+}
+
+function downloadExcel(){
+  const data = loadAppointments();
+  const sheet = XLSX.utils.json_to_sheet(data);
+  const book = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(book, sheet, "Bookings");
+  XLSX.writeFile(book, "Bookings.xlsx");
+}
+
+function logout(){
+  sessionStorage.removeItem("admin_logged");
+  window.location.href = "{{ url_for('admin_login') }}";
+}
+
+let chartDoctors, chartTrend;
+
+function initCharts(){
+  chartDoctors = new Chart(document.getElementById("chartDoctors"), {
+    type:"bar",
+    data:{labels:[],datasets:[{data:[],backgroundColor:"#2da9ff"}]}
+  });
+
+  chartTrend = new Chart(document.getElementById("chartTrend"), {
+    type:"line",
+    data:{labels:[],datasets:[{data:[],borderColor:"#2da9ff"}]}
+  });
+}
+
+function updateCharts(data){
+  if(!data.length) return;
+
+  let counts = {};
+  data.forEach(a=>{
+    counts[a.doctor] = (counts[a.doctor] || 0) + 1;
+  });
+
+  chartDoctors.data.labels = Object.keys(counts);
+  chartDoctors.data.datasets[0].data = Object.values(counts);
+  chartDoctors.update();
+
+  let days = [];
+  let values = [];
+
+  for(let i=6;i>=0;i--){
+    let d = new Date();
+    d.setDate(d.getDate()-i);
+    let key = d.toISOString().slice(0,10);
+
+    days.push(key);
+    values.push(data.filter(a =>
+      new Date(a.created).toISOString().slice(0,10) === key
+    ).length);
+  }
+
+  chartTrend.data.labels = days.map(d=>d.slice(5));
+  chartTrend.data.datasets[0].data = values;
+  chartTrend.update();
+}
+
+loadDoctorFilter();
+renderTable(loadAppointments());
+initCharts();
+updateCharts(loadAppointments());
+
+</script>
+
+</body>
+</html>

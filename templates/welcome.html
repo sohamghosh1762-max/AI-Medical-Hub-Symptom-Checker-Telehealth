@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Welcome — AI Medical Hub</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --accent:#2da9ff;
+  --accent2:#7dd3fc;
+  --bg:#020817;
+  --text:#e8f1ff;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Poppins',sans-serif;
+  background:radial-gradient(800px at 20% 10%,rgba(45,169,255,0.1),transparent),
+             linear-gradient(180deg,#020817,#01050f);
+  color:var(--text);
+  height:100vh;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+
+/* Floating particles */
+.particles span{
+  position:absolute;
+  width:3px;
+  height:3px;
+  background:var(--accent);
+  border-radius:50%;
+  opacity:0.5;
+  animation:floatUp 6s linear infinite;
+}
+@keyframes floatUp{
+  0%{transform:translateY(120vh) scale(0.6);}
+  100%{transform:translateY(-10vh) scale(1);}
+}
+
+.logo{
+  width:160px;
+  height:auto;
+  animation:logoFade 1.6s ease-out forwards, glowPulse 3.5s ease-in-out infinite;
+  filter:drop-shadow(0 0 12px rgba(45,169,255,0.45));
+  margin-bottom:18px;
+}
+@keyframes logoFade{
+  from{opacity:0; transform:scale(0.7);}
+  to{opacity:1; transform:scale(1);}
+}
+@keyframes glowPulse{
+  0%{filter:drop-shadow(0 0 6px rgba(45,169,255,0.3));}
+  50%{filter:drop-shadow(0 0 16px rgba(45,169,255,0.6));}
+  100%{filter:drop-shadow(0 0 6px rgba(45,169,255,0.3));}
+}
+
+/* Typewriter title */
+h1{
+  font-size:40px;
+  font-weight:900;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  white-space:nowrap;
+  overflow:hidden;
+  width:0;
+  animation:typing 3s steps(40) forwards;
+}
+@keyframes typing{
+  from{width:0;}
+  to{width:100%;}
+}
+
+.sub{
+  margin-top:8px;
+  color:var(--accent2);
+  font-size:14px;
+  opacity:0;
+  animation:fadeIn 1.6s ease forwards;
+  animation-delay:3s;
+}
+@keyframes fadeIn{
+  from{opacity:0;}
+  to{opacity:1;}
+}
+
+/* Team Box */
+.team{
+  margin-top:26px;
+  display:flex;
+  gap:22px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+
+.member{
+  width:160px;
+  padding:14px;
+  background:rgba(255,255,255,0.03);
+  backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:16px;
+  text-align:center;
+  box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  opacity:0;
+  transform:translateY(20px);
+  animation:slideUp 0.8s ease forwards;
+}
+.member:nth-child(1){animation-delay:3.2s;}
+.member:nth-child(2){animation-delay:3.4s;}
+.member:nth-child(3){animation-delay:3.6s;}
+.member:nth-child(4){animation-delay:3.8s;}
+.member:nth-child(5){animation-delay:4s;}
+
+@keyframes slideUp{
+  to{opacity:1; transform:translateY(0);}
+}
+
+.member img{
+  width:100%;
+  height:140px;
+  object-fit:cover;
+  border-radius:12px;
+  border:2px solid rgba(45,169,255,0.4);
+  box-shadow:0 0 18px rgba(45,169,255,0.25);
+}
+
+.member h3{
+  margin-top:10px;
+  font-size:15px;
+  font-weight:700;
+}
+
+/* Enter Button */
+.enter-btn{
+  margin-top:28px;
+  padding:14px 36px;
+  font-size:16px;
+  font-weight:700;
+  border:none;
+  border-radius:14px;
+  cursor:pointer;
+  color:#02111b;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  box-shadow:0 10px 28px rgba(45,169,255,0.35);
+  opacity:0;
+  animation:fadeIn 1.2s ease forwards;
+  animation-delay:4.5s;
+}
+.enter-btn:hover{
+  transform:translateY(-5px);
+  box-shadow:0 16px 40px rgba(45,169,255,0.45);
+  transition:0.3s;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- Particle Background -->
+<div class="particles">
+  <span style="left:10%; animation-delay:0s"></span>
+  <span style="left:25%; animation-delay:1s"></span>
+  <span style="left:40%; animation-delay:0.5s"></span>
+  <span style="left:55%; animation-delay:1.6s"></span>
+  <span style="left:70%; animation-delay:0.8s"></span>
+  <span style="left:85%; animation-delay:1.2s"></span>
+</div>
+
+<!-- Logo -->
+<img src="https://image2url.com/images/1763809716023-48ae9ee6-2855-4030-b48f-2aff95cd1668.png" class="logo" alt="Logo">
+
+<!-- Title -->
+<h1>Welcome to AI Medical Hub</h1>
+<div class="sub">Developed by MedAI Nexus Team</div>
+
+<!-- Team -->
+<div class="team">
+
+  <div class="member">
+    <img src="https://image2url.com/images/1763807406705-aa4a2209-75c0-4f77-b659-36f61f5087b7.jpeg" alt="Soham Ghosh">
+    <h3>Soham Ghosh</h3>
+    <p>B.Tech CSE-AIML</p>
+  </div>
+
+  <div class="member">
+    <img src="https://image2url.com/images/1763808921632-6a2138c6-599c-448b-8835-fe1f004f6f37.jpeg" alt="Shibnath Sahoo">
+    <h3>Shibnath Sahoo</h3>
+    <p>B.Tech CSE-AIML</p>
+  </div>
+
+  <div class="member">
+    <img src="https://image2url.com/images/1763809253965-b6971b3d-eae8-4655-ab74-5c431a85d1e4.jpeg" alt="Debalina Goswami">
+    <h3>Debalina Goswami</h3>
+    <p>B.Tech CSE-AIML</p>
+  </div>
+
+  <div class="member">
+    <img src="https://image2url.com/images/1763821949532-1c86fd7b-5926-466f-9356-a176e54cf743.jpg" alt="Aditya Roy">
+    <h3>Aditya Roy</h3>
+    <p>B.Tech CSE-AIML</p>
+  </div>
+
+  <div class="member">
+    <img src="https://image2url.com/images/1763820345739-16652ef5-d9cc-41a4-8397-c0d8a33da7cd.jpeg" alt="Ayan Bandyopadhyay">
+    <h3>Ayan Bandyopadhyay</h3>
+    <p>B.Tech CSE-AIML</p>
+  </div>
+
+</div>
+
+<!-- Enter Button -->
+<button class="enter-btn" onclick="enterSite()">GO TO WEBSITE</button>
+
+<script>
+function enterSite(){
+  document.body.style.opacity = "0";
+  document.body.style.transition = "0.8s";
+
+  setTimeout(() => {
+    window.location.href = "/select_role";  // ✔ Correct Flask route
+  }, 800);
+}
+</script>
+
+</body>
+</html>
